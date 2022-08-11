@@ -1,0 +1,25 @@
+[
+    {
+        "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins-old/builds/ExampleProvider.cs3",
+        "status": 1,
+        "version": 1,
+        "name": "ExampleProvider",
+        "internalName": "ExampleProvider",
+        "authors": [
+            "Faisal"
+        ],
+        "description": "Multi language Movies and Tv shows provider",
+        "fileSize": 25875,
+        "repositoryUrl": "https://github.com/Faisal0786/TestPlugins-old",
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "AsianDrama",
+            "Anime",
+            "Torrent"
+        ],
+        "iconUrl": "https://streamimdb.ru/favicon.ico",
+        "apiVersion": 1,
+        "fileHash": "sha256-7711a4f91c55c01d4be79474b64671b412cca5e363ad3ab9d67140ea1bb44876"
+    }
+]
