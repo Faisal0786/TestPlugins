@@ -1,13 +1,11 @@
 package com.example
 
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.APIHolder.capitalize
 
-class StreamIMDB : MainAPI() { 
+class ExampleProvider : MainAPI() { 
     override var mainUrl = "https://streamimdb.ru"
-    override var name = "StreamIMDB"
+    // App ke andar naam 'StreamIMDB' hi dikhega, chahe class ka naam ExampleProvider ho
+    override var name = "StreamIMDB" 
     override val hasMainPage = true
     override var lang = "hi"
     override val hasQuickSearch = true
@@ -21,10 +19,7 @@ class StreamIMDB : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val url = "$mainUrl/api.php?search=$query"
-        val response = app.get(url).text
-        // Abhi ke liye empty list bhej rahe hain taaki build pass ho jaye
-        return listOf<SearchResponse>()
+        return listOf() // Abhi blank, bas build theek karne ke liye
     }
 
     override suspend fun load(url: String): LoadResponse? {
