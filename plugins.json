@@ -1,1 +1,13 @@
+[
+  {
+    "plugin": "ExampleProvider",
+    "name": "StreamIMDB",
+    "description": "Faisal's Premium Extension",
+    "author": "Faisal0786",
+    "version": 1,
+    "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/ExampleProvider/build/ExampleProvider.cs3",
+    "iconUrl": "https://streamimdb.ru/favicon.ico",
+    "lang": "hi"
+  }
+]
 
