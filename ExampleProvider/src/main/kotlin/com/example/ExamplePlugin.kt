@@ -7,7 +7,7 @@ import android.content.Context
 @CloudstreamPlugin
 class ExamplePlugin: Plugin() {
     override fun load(context: Context) {
-    
-        registerMainAPI(StreamIMDB())
+        // Ye ExampleProvider ko app mein load karega
+        registerMainAPI(ExampleProvider())
     }
 }
