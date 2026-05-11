@@ -10,12 +10,12 @@ class ExampleProvider : MainAPI() {
     override var lang = "hi"
     override val hasQuickSearch = true
 
-    override suspend fun getMainPage(page: Int, request: HomePageRequest): HomePageResponse {
+    override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
         val list = listOf(
-            HomePageList("Latest Movies", "$mainUrl/api.php?type=movies"),
-            HomePageList("Latest Series", "$mainUrl/api.php?type=series")
+            HomePageList("Latest Movies", listOf()),
+            HomePageList("Latest Series", listOf())
         )
-        return HomePageResponse(list)
+        return newHomePageResponse(list)
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
