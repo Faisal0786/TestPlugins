@@ -1,7 +1,9 @@
-package com.lagradost
+package com.example
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
+import com.lagradost.cloudstream3.APIHolder.capitalize
 
 class StreamIMDB : MainAPI() { 
     override var mainUrl = "https://streamimdb.ru"
@@ -19,6 +21,13 @@ class StreamIMDB : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        return listOf() // Abhi ke liye khali, pehle build test karte hain
+        val url = "$mainUrl/api.php?search=$query"
+        val response = app.get(url).text
+        // Abhi ke liye empty list bhej rahe hain taaki build pass ho jaye
+        return listOf<SearchResponse>()
+    }
+
+    override suspend fun load(url: String): LoadResponse? {
+        return null
     }
 }
