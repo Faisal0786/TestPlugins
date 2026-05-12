@@ -1,8 +1,8 @@
-[
-  {
-    "name": "StreamIMDB",
-    "internalName": "ExampleProvider",
-    "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/ExampleProvider.cs3",
-    "version": 200
-  }
-]
+{
+  "name": "Faisal's Repository",
+  "description": "Cloudstream Plugins",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/plugins.json"
+  ]
+}
