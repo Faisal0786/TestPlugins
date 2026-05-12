@@ -1,6 +1,7 @@
 [
   {
     "name": "StreamIMDB",
+    "internalName": "ExampleProvider",
     "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/ExampleProvider.cs3",
     "version": 170
   }
