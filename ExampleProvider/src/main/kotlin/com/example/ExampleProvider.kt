@@ -65,14 +65,13 @@ class ExampleProvider : MainAPI() {
 
         println("ITEMS FOUND = ${items.size}")
 
-        return HomePageResponse(
+        return newHomePageResponse(
             listOf(
                 HomePageList(
                     request.name,
                     items
                 )
-            ),
-            false
+            )
         )
     }
 
