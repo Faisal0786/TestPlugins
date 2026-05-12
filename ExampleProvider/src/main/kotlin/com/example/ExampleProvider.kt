@@ -4,20 +4,14 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
 class ExampleProvider : MainAPI() {  // Changed from StreamImdb to ExampleProvider
-
+class ExampleProvider : MainAPI() {  // Line 6
     override var mainUrl = "https://streamimdb.ru"
-    override var name = "StreamIMDB"
-    override val hasMainPage = true
-    override var lang = "en"
-    override val hasQuickSearch = true
-
-    override val supportedTypes = setOf(
-        TvType.Movie,
-        TvType.TvSeries
-    )
-
-    // Rest of the code remains the same...
-}
+    // ... ALL your properties and functions ...
+    override suspend fun loadLinks(...): Boolean {
+        // ... code ...
+        return true
+    }
+  // ← This should be at the END, not at line 20!
     // Version bump
     override var version = 170
 
