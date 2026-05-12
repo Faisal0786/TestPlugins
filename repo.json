@@ -1,1 +1,8 @@
-
+{
+  "name": "TestPlugins",
+  "description": "Faisal Extensions",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/plugins.json"
+  ]
+}
