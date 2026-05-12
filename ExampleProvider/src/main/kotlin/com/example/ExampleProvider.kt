@@ -100,12 +100,11 @@ class ExampleProvider : MainAPI() {
             newExtractorLink(
                 source = name,
                 name = "Stream Player",
-                url = fixUrl(iframe)
-            ) {
-                referer = "$mainUrl/"
-                quality = Qualities.Unknown.value
+                url = fixUrl(iframe),
+                referer = "$mainUrl/",
+                quality = Qualities.Unknown.value,
                 isM3u8 = iframe.contains(".m3u8")
-            }
+            )
         )
 
         return true
