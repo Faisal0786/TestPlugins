@@ -137,7 +137,9 @@ class ExampleProvider : MainAPI() {
                 descriptionText?.let {
                     plot = it
                 }
-                this.year = year
+                year?.let {
+                    this.year = it
+                }
             }
 
         } else {
@@ -152,7 +154,9 @@ class ExampleProvider : MainAPI() {
                 descriptionText?.let {
                     plot = it
                 }
-                this.year = year
+                year?.let {
+                    this.year = it
+                }
             }
         }
     }
