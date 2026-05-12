@@ -1,12 +1,12 @@
 [
   {
     "name": "StreamIMDB",
-    "internalName": "ExampleProvider",
+    "internalName": "StreamIMDB",
     "description": "Faisal's Premium Extension",
     "author": "Faisal0786",
     "version": 1,
     "status": 1,
-    "tvTypes": ["Movie"],
+    "tvTypes": ["Movie", "TvSeries"],
     "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/build/ExampleProvider.cs3",
     "lang": "hi"
   }
