@@ -121,20 +121,12 @@ class ExampleProvider : MainAPI() {
             ?.value
             ?.toIntOrNull()
 
-        val ratingText =
-            document.selectFirst("[class*=rating]")
-                ?.text()
-
-        val rating = ratingText
-            ?.filter {
-                it.isDigit() || it == '.'
-            }
-            ?.toRatingInt()
-
         val actors = document
             .select("a[href*=actor], a[href*=cast]")
             .map {
-                Actor(it.text())
+                ActorData(
+                    Actor(it.text())
+                )
             }
 
         return newMovieLoadResponse(
@@ -147,7 +139,6 @@ class ExampleProvider : MainAPI() {
             this.posterUrl = poster
             this.plot = description
             this.year = year
-            this.rating = rating
 
             if (actors.isNotEmpty()) {
                 this.actors = actors
