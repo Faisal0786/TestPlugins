@@ -1,8 +1,8 @@
-{
-  "name": "Faisal's Repository",
-  "description": "My Premium CloudStream Extensions",
-  "author": "Faisal0786",
-  "pluginLists": [
-    "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/plugins.json"
-  ]
-}
+[
+  {
+    "name": "StreamIMDB",
+    "internalName": "ExampleProvider",
+    "url": "https://github.com/Faisal0786/TestPlugins/raw/refs/heads/master/ExampleProvider.cs3",
+    "version": 1
+  }
+]
