@@ -85,6 +85,24 @@ subprojects {
     }
 }
 
+ subprojects {
+    apply(plugin = "com.android.library")
+    apply(plugin = "kotlin-android")
+    apply(plugin = "com.lagradost.cloudstream3.gradle")
+
+    cloudstream {
+        setRepo("Faisal0786/TestPlugins")
+
+        android {
+            // ... android configuration ...
+        }
+
+        dependencies {
+            // ... dependencies ...
+        }
+    }  // ← ADD THIS BRACE (closes cloudstream block)
+}
+
 task<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
