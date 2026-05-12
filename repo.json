@@ -1,7 +1,7 @@
 {
-  "name": "TestPlugins",
-  "description": "Faisal Extensions",
-  "manifestVersion": 1,
+  "name": "Faisal's Repository",
+  "description": "My Premium CloudStream Extensions",
+  "author": "Faisal0786",
   "pluginLists": [
     "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/plugins.json"
   ]
