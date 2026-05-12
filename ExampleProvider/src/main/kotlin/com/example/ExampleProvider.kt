@@ -1,106 +1,47 @@
-package com.example
+override val mainPage = mainPageOf(
+    "$mainUrl/movies" to "Movies"
+)
 
-import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.utils.*
-import org.jsoup.nodes.Element
+override suspend fun getMainPage(
+    page: Int,
+    request: MainPageRequest
+): HomePageResponse {
 
-class ExampleProvider : MainAPI() {
+    val document = app.get(
+        request.data,
+        headers = mapOf(
+            "User-Agent" to USER_AGENT
+        )
+    ).document
 
-    override var mainUrl = "https://streamimdb.ru"
-    override var name = "StreamIMDB"
-    override val hasMainPage = true
-    override var lang = "en"
-    override val hasQuickSearch = true
+    val home = document.select(".cb-card").mapNotNull { element ->
 
-    override val supportedTypes = setOf(
-        TvType.Movie,
-        TvType.TvSeries
-    )
+        val aTag = element.selectFirst("a")
+        val img = element.selectFirst("img")
 
-    private val stealthHeaders = mapOf(
-        "User-Agent" to "Mozilla/5.0",
-        "Referer" to "$mainUrl/"
-    )
+        val title = img?.attr("alt")?.trim() ?: return@mapNotNull null
 
-    override val mainPage = mainPageOf(
-        "$mainUrl/" to "Home"
-    )
+        val href = fixUrlNull(
+            aTag?.attr("href")
+        ) ?: return@mapNotNull null
 
-    override suspend fun getMainPage(
-        page: Int,
-        request: MainPageRequest
-    ): HomePageResponse {
-
-        val items = listOf(
-            newMovieSearchResponse(
-                "TEST MOVIE",
-                "$mainUrl/test",
-                TvType.Movie
-            ) {
-                posterUrl =
-                    "https://via.placeholder.com/300x450.png"
-            }
+        val poster = fixUrlNull(
+            img.attr("src")
         )
 
-        return newHomePageResponse(
-            HomePageList(
-                "TEST",
-                items
-            )
-        )
-    }
-
-    override suspend fun search(
-        query: String
-    ): List<SearchResponse> {
-
-        return listOf(
-            newMovieSearchResponse(
-                "TEST SEARCH",
-                "$mainUrl/test",
-                TvType.Movie
-            ) {
-                posterUrl =
-                    "https://via.placeholder.com/300x450.png"
-            }
-        )
-    }
-
-    override suspend fun load(
-        url: String
-    ): LoadResponse {
-
-        return newMovieLoadResponse(
-            "TEST MOVIE",
-            url,
-            TvType.Movie,
-            url
+        newMovieSearchResponse(
+            title,
+            href,
+            TvType.Movie
         ) {
-            posterUrl =
-                "https://via.placeholder.com/300x450.png"
-
-            plot = "Test description"
-            year = 2025
+            this.posterUrl = poster
         }
     }
 
-    override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
+    Log.d("StreamIMDB", "HOME ITEMS = ${home.size}")
 
-        callback.invoke(
-            newExtractorLink(
-                source = name,
-                name = name,
-                url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-            ) {
-                quality = Qualities.P1080.value
-            }
-        )
-
-        return true
-    }
+    return newHomePageResponse(
+        request.name,
+        home
+    )
 }
