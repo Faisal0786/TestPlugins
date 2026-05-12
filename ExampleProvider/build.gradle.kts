@@ -4,7 +4,7 @@ dependencies {
 }
 
 // Use an integer for version numbers
-version = 172
+version = 173
 
 cloudstream {
     description = "Faisal's Premium Extension"
