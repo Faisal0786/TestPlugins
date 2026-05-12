@@ -122,13 +122,14 @@ class ExampleProvider : MainAPI() {
     ): Boolean {
 
         callback.invoke(
-            ExtractorLink(
-                this.name,
-                this.name,
-                data,
-                "",
-                Qualities.Unknown.value
-            )
+            newExtractorLink(
+                source = this.name,
+                name = this.name,
+                url = data
+            ) {
+                referer = ""
+                quality = Qualities.Unknown.value
+            }
         )
 
         return true
