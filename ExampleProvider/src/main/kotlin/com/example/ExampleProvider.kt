@@ -3,6 +3,7 @@ package com.example
 import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.Score
 import org.jsoup.nodes.Element
 import org.json.JSONObject
 import java.net.URLEncoder
@@ -215,18 +216,14 @@ class ExampleProvider : MainAPI() {
                     (movie.getDouble("vote_average") * 10)
                         .toInt()
 
-                if (
-                    !movie.isNull("poster_path")
-                ) {
+                if (!movie.isNull("poster_path")) {
 
                     tmdbPoster =
                         "https://image.tmdb.org/t/p/w500" +
                                 movie.getString("poster_path")
                 }
 
-                if (
-                    !movie.isNull("backdrop_path")
-                ) {
+                if (!movie.isNull("backdrop_path")) {
 
                     tmdbBackdrop =
                         "https://image.tmdb.org/t/p/original" +
@@ -302,12 +299,14 @@ class ExampleProvider : MainAPI() {
             this.year =
                 tmdbYear ?: year
 
-            this.score =
-                tmdbScore
+            if (tmdbScore != null) {
 
-            if (
-                !tmdbActors.isNullOrEmpty()
-            ) {
+                this.score = Score.from10(
+                    tmdbScore / 10.0
+                )
+            }
+
+            if (!tmdbActors.isNullOrEmpty()) {
 
                 this.actors =
                     tmdbActors
