@@ -1,10 +1,9 @@
 package com.example
 
-import com.lagradost.cloudstream3.plugins.CloudstreamPlugin
-import com.lagradost.cloudstream3.plugins.Plugin
+import com.lagradost.cloudstream3.plugins.*
 
 @CloudstreamPlugin
-class ExamplePlugin: Plugin() {
+class ExamplePlugin : Plugin() {
     override fun load() {
         registerMainAPI(ExampleProvider())
     }
