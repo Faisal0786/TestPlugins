@@ -95,6 +95,7 @@ class ExampleProvider : MainAPI() {
     ): Boolean {
         val document = app.get(data, headers = stealthHeaders).document
         val iframe = document.selectFirst("iframe")?.attr("src") ?: return false
+        val isM3u8Link = iframe.contains(".m3u8")
 
         callback.invoke(
             newExtractorLink(
@@ -104,7 +105,7 @@ class ExampleProvider : MainAPI() {
             ) {
                 referer = "$mainUrl/"
                 quality = Qualities.Unknown.value
-                isM3u8 = iframe.contains(".m3u8")
+                isM3u8 = isM3u8Link
             }
         )
 
