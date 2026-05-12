@@ -37,101 +37,180 @@ class ExampleProvider : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val url = if (page == 1) request.data else "${request.data}?page=$page"
-        
+
+        val url = if (page == 1) {
+            request.data
+        } else {
+            "${request.data}?page=$page"
+        }
+
         val document = app.get(url, headers = stealthHeaders).document
-        val home = document.select(".cb-card, .movie-card, .item, .poster").mapNotNull { 
-            it.toSearchResult() 
+
+        val home = document.select(
+            ".cb-card, .movie-card, .item, .poster"
+        ).mapNotNull {
+            it.toSearchResult()
         }
 
         return newHomePageResponse(request.name, home)
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val searchUrl = "$mainUrl/search?q=${query.replace(" ", "+")}"
-        val document = app.get(searchUrl, headers = stealthHeaders).document
 
-        return document.select(".cb-card, .movie-card, .item, .poster").mapNotNull { 
-            it.toSearchResult() 
+        val searchUrl =
+            "$mainUrl/search?q=${query.replace(" ", "+")}"
+
+        val document = app.get(
+            searchUrl,
+            headers = stealthHeaders
+        ).document
+
+        return document.select(
+            ".cb-card, .movie-card, .item, .poster"
+        ).mapNotNull {
+            it.toSearchResult()
         }
     }
 
     override suspend fun load(url: String): LoadResponse {
-        val document = app.get(url, headers = stealthHeaders).document
 
-        val title = document.selectFirst("h1, .cb-details-title, .entry-title")?.text()?.trim() 
-            ?: "Unknown"
-        
-        val poster = document.selectFirst("meta[property=og:image]")?.attr("content")
+        val document = app.get(
+            url,
+            headers = stealthHeaders
+        ).document
 
-        val descriptionText = document.selectFirst(".description, .content, .entry-content, .overview")
-            ?.text()?.trim()
+        val title = document.selectFirst(
+            "h1, .cb-details-title, .entry-title"
+        )?.text()?.trim() ?: "Unknown"
 
-        val yearString = document.selectFirst(".year, .date, .release")?.text() ?: ""
-        val year = yearString.filter { it.isDigit() }.toIntOrNull()
+        val poster = document.selectFirst(
+            "meta[property=og:image]"
+        )?.attr("content")
 
-        val isTv = url.contains("/tv") || url.contains("series") || url.contains("tv-shows")
+        val descriptionText = document.selectFirst(
+            ".description, .content, .entry-content, .overview"
+        )?.text()?.trim()
+
+        val yearString = document.selectFirst(
+            ".year, .date, .release"
+        )?.text() ?: ""
+
+        val year = yearString
+            .filter { it.isDigit() }
+            .toIntOrNull()
+
+        val isTv = url.contains("/tv") ||
+                url.contains("series") ||
+                url.contains("tv-shows")
 
         return if (isTv) {
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, emptyList()) {
+
+            newTvSeriesLoadResponse(
+                title,
+                url,
+                TvType.TvSeries,
+                emptyList()
+            ) {
                 posterUrl = poster
-                if (descriptionText != null) plot = descriptionText
-                if (year != null) this.year = year
+
+                if (descriptionText != null) {
+                    plot = descriptionText
+                }
+
+                if (year != null) {
+                    this.year = year
+                }
             }
+
         } else {
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
+
+            newMovieLoadResponse(
+                title,
+                url,
+                TvType.Movie,
+                url
+            ) {
                 posterUrl = poster
-                if (descriptionText != null) plot = descriptionText
-                if (year != null) this.year = year
+
+                if (descriptionText != null) {
+                    plot = descriptionText
+                }
+
+                if (year != null) {
+                    this.year = year
+                }
             }
         }
     }
 
     override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
 
-    val document = app.get(data, headers = stealthHeaders).document
-    val iframe = document.selectFirst("iframe")?.attr("src") ?: return false
-    val isM3u8Link = iframe.contains(".m3u8")
+        val document = app.get(
+            data,
+            headers = stealthHeaders
+        ).document
 
-    callback.invoke(
-        newExtractorLink(
-            source = name,
-            name = name,
-            url = fixUrl(iframe),
-            type = if (isM3u8Link)
-                ExtractorLinkType.M3U8
-            else
-                ExtractorLinkType.VIDEO,
-            referer = "$mainUrl/",
-            quality = Qualities.Unknown.value
+        val iframe = document
+            .selectFirst("iframe")
+            ?.attr("src")
+            ?: return false
+
+        callback.invoke(
+            newExtractorLink(
+                source = name,
+                name = name,
+                url = fixUrl(iframe)
+            ) {
+                referer = "$mainUrl/"
+                quality = Qualities.Unknown.value
+            }
         )
-    )
 
-    return true
+        return true
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = selectFirst(".cb-card-title, .movie-title, h2, h3, .title")?.text()?.trim()
+
+        val title = selectFirst(
+            ".cb-card-title, .movie-title, h2, h3, .title"
+        )?.text()?.trim()
             ?: return null
 
-        val href = selectFirst("a")?.attr("href") ?: return null
-        
-        val poster = selectFirst("img")?.attr("data-src")?.takeIf { it.isNotBlank() }
+        val href = selectFirst("a")
+            ?.attr("href")
+            ?: return null
+
+        val poster = selectFirst("img")
+            ?.attr("data-src")
+            ?.takeIf { it.isNotBlank() }
             ?: selectFirst("img")?.attr("src")
 
-        val isTv = href.contains("/tv") || href.contains("series") || href.contains("tv-shows")
+        val isTv = href.contains("/tv") ||
+                href.contains("series") ||
+                href.contains("tv-shows")
 
         return if (isTv) {
-            newTvSeriesSearchResponse(title, fixUrl(href), TvType.TvSeries) {
+
+            newTvSeriesSearchResponse(
+                title,
+                fixUrl(href),
+                TvType.TvSeries
+            ) {
                 posterUrl = poster
             }
+
         } else {
-            newMovieSearchResponse(title, fixUrl(href), TvType.Movie) {
+
+            newMovieSearchResponse(
+                title,
+                fixUrl(href),
+                TvType.Movie
+            ) {
                 posterUrl = poster
             }
         }
