@@ -11,7 +11,6 @@ class ExampleProvider : MainAPI() {
     override val hasMainPage = true
     override var lang = "en"
     override val hasQuickSearch = true
-    override var version = 176
 
     override val supportedTypes = setOf(
         TvType.Movie,
@@ -24,7 +23,7 @@ class ExampleProvider : MainAPI() {
     private val stealthHeaders = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Referer" to "$mainUrl/",
-        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language" to "en-US,en;q=0.9"
     )
 
@@ -48,7 +47,7 @@ class ExampleProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
 
-        val pageUrl =
+        val url =
             if (page == 1) {
                 request.data
             } else {
@@ -56,7 +55,7 @@ class ExampleProvider : MainAPI() {
             }
 
         val document = app.get(
-            pageUrl,
+            url,
             headers = stealthHeaders
         ).document
 
@@ -132,11 +131,11 @@ class ExampleProvider : MainAPI() {
                 title,
                 url,
                 TvType.TvSeries,
-                emptyList<Episode>()
+                emptyList()
             ) {
                 posterUrl = poster
                 descriptionText?.let {
-                    this.plot = it
+                    plot = it
                 }
                 this.year = year
             }
@@ -151,7 +150,7 @@ class ExampleProvider : MainAPI() {
             ) {
                 posterUrl = poster
                 descriptionText?.let {
-                    this.plot = it
+                    plot = it
                 }
                 this.year = year
             }
@@ -179,21 +178,22 @@ class ExampleProvider : MainAPI() {
                 ?: return false
 
         callback.invoke(
-            ExtractorLink(
+            newExtractorLink(
                 source = name,
                 name = "Stream Player",
-                url = fixUrl(iframe),
-                referer = "$mainUrl/",
-                quality = Qualities.Unknown.value,
+                url = fixUrl(iframe)
+            ) {
+                referer = "$mainUrl/"
+                quality = Qualities.Unknown.value
                 isM3u8 = iframe.contains(".m3u8")
-            )
+            }
         )
 
         return true
     }
 
     // =========================
-    // SEARCH RESULT PARSER
+    // PARSER
     // =========================
     private fun Element.toSearchResult(): SearchResponse? {
 
@@ -227,7 +227,7 @@ class ExampleProvider : MainAPI() {
                 fixUrl(href),
                 TvType.TvSeries
             ) {
-                this.posterUrl = poster
+                posterUrl = poster
             }
 
         } else {
@@ -237,7 +237,7 @@ class ExampleProvider : MainAPI() {
                 fixUrl(href),
                 TvType.Movie
             ) {
-                this.posterUrl = poster
+                posterUrl = poster
             }
         }
     }
