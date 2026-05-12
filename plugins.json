@@ -7,8 +7,8 @@
     "version": 1,
     "status": 1,
     "tvTypes": ["Movie", "TvSeries"],
-    "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/ExampleProvider/build/ExampleProvider.cs3",
-    "iconUrl": "https://streamimdb.ru/favicon.ico",
+    "url":"https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/build/ExampleProvider.cs3"",
+    "iconUrl":"https://streamimdb.ru/favicon.ico",
     "lang": "hi"
   }
 ]
