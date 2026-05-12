@@ -94,14 +94,48 @@ class ExampleProvider : MainAPI() {
             )
         ).document
 
-        val title = document.selectFirst("h1")?.text()?.trim()
-            ?: "No Title"
+        val title =
+            document.selectFirst("meta[property=og:title]")
+                ?.attr("content")
+                ?.substringBefore(" -")
+                ?.trim()
+
+                ?: document.selectFirst("title")
+                    ?.text()
+                    ?.substringBefore(" -")
+                    ?.trim()
+
+                ?: "No Title"
 
         val poster = fixUrlNull(
-            document.selectFirst("img")?.attr("src")
+            document.selectFirst("meta[property=og:image]")
+                ?.attr("content")
         )
 
-        val description = document.selectFirst("p")?.text()
+        val description =
+            document.selectFirst("meta[property=og:description]")
+                ?.attr("content")
+
+        val year = Regex("""(19|20)\d{2}""")
+            .find(document.text())
+            ?.value
+            ?.toIntOrNull()
+
+        val ratingText =
+            document.selectFirst("[class*=rating]")
+                ?.text()
+
+        val rating = ratingText
+            ?.filter {
+                it.isDigit() || it == '.'
+            }
+            ?.toRatingInt()
+
+        val actors = document
+            .select("a[href*=actor], a[href*=cast]")
+            .map {
+                Actor(it.text())
+            }
 
         return newMovieLoadResponse(
             title,
@@ -109,8 +143,15 @@ class ExampleProvider : MainAPI() {
             TvType.Movie,
             url
         ) {
+
             this.posterUrl = poster
             this.plot = description
+            this.year = year
+            this.rating = rating
+
+            if (actors.isNotEmpty()) {
+                this.actors = actors
+            }
         }
     }
 
