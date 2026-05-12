@@ -3,7 +3,7 @@ package com.example
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-class StreamImdb : MainAPI() {
+class ExampleProvider : MainAPI() {  // Changed from StreamImdb to ExampleProvider
 
     override var mainUrl = "https://streamimdb.ru"
     override var name = "StreamIMDB"
@@ -16,6 +16,8 @@ class StreamImdb : MainAPI() {
         TvType.TvSeries
     )
 
+    // Rest of the code remains the same...
+}
     // Version bump
     override var version = 170
 
