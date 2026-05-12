@@ -88,28 +88,31 @@ class ExampleProvider : MainAPI() {
     }
 
     override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        val document = app.get(data, headers = stealthHeaders).document
-        val iframe = document.selectFirst("iframe")?.attr("src") ?: return false
-        val isM3u8Link = iframe.contains(".m3u8")
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
 
-        callback.invoke(
-            newExtractorLink(
-                source = name,
-                name = name,
-                url = fixUrl(iframe)
-            ) {
-                referer = "$mainUrl/"
-                quality = Qualities.Unknown.value
-                isM3u8 = isM3u8Link
-            }
+    val document = app.get(data, headers = stealthHeaders).document
+    val iframe = document.selectFirst("iframe")?.attr("src") ?: return false
+    val isM3u8Link = iframe.contains(".m3u8")
+
+    callback.invoke(
+        newExtractorLink(
+            source = name,
+            name = name,
+            url = fixUrl(iframe),
+            type = if (isM3u8Link)
+                ExtractorLinkType.M3U8
+            else
+                ExtractorLinkType.VIDEO,
+            referer = "$mainUrl/",
+            quality = Qualities.Unknown.value
         )
+    )
 
-        return true
+    return true
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
