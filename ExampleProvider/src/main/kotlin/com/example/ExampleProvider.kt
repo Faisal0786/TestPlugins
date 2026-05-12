@@ -38,24 +38,47 @@ class ExampleProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
 
-        val url = if (page == 1) {
-            request.data
-        } else {
-            "${request.data}?page=$page"
+        val doc = app.get(
+            request.data,
+            headers = stealthHeaders
+        ).document
+
+        val items = doc.select("a[href]").mapNotNull { a ->
+
+            val href = a.absUrl("href")
+            val title = a.text().trim()
+
+            if (
+                href.isBlank() ||
+                title.isBlank() ||
+                title.length < 2
+            ) return@mapNotNull null
+
+            newMovieSearchResponse(
+                title,
+                href,
+                TvType.Movie
+            )
         }
+            .distinctBy { it.url }
+            .take(30)
 
-        val document = app.get(url, headers = stealthHeaders).document
+        println("ITEMS FOUND = ${items.size}")
 
-        val home = document.select(
-            ".cb-card, .movie-card, .item, .poster"
-        ).mapNotNull {
-            it.toSearchResult()
-        }
-
-        return newHomePageResponse(request.name, home)
+        return HomePageResponse(
+            listOf(
+                HomePageList(
+                    request.name,
+                    items
+                )
+            ),
+            false
+        )
     }
 
-    override suspend fun search(query: String): List<SearchResponse> {
+    override suspend fun search(
+        query: String
+    ): List<SearchResponse> {
 
         val searchUrl =
             "$mainUrl/search?q=${query.replace(" ", "+")}"
@@ -72,7 +95,9 @@ class ExampleProvider : MainAPI() {
         }
     }
 
-    override suspend fun load(url: String): LoadResponse {
+    override suspend fun load(
+        url: String
+    ): LoadResponse {
 
         val document = app.get(
             url,
