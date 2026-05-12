@@ -18,19 +18,12 @@ class ExampleProvider : MainAPI() {
     )
 
     private val stealthHeaders = mapOf(
-        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Referer" to "$mainUrl/",
-        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language" to "en-US,en;q=0.9"
+        "User-Agent" to "Mozilla/5.0",
+        "Referer" to "$mainUrl/"
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/" to "Home",
-        "$mainUrl/movies" to "Movies",
-        "$mainUrl/tv-shows" to "TV Shows",
-        "$mainUrl/category/action" to "Action",
-        "$mainUrl/category/comedy" to "Comedy",
-        "$mainUrl/category/horror" to "Horror"
+        "$mainUrl/" to "Home"
     )
 
     override suspend fun getMainPage(
@@ -38,39 +31,21 @@ class ExampleProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
 
-        val doc = app.get(
-            request.data,
-            headers = stealthHeaders
-        ).document
-
-        val items = doc.select("a[href]").mapNotNull { a ->
-
-            val href = a.absUrl("href")
-            val title = a.text().trim()
-
-            if (
-                href.isBlank() ||
-                title.isBlank() ||
-                title.length < 2
-            ) return@mapNotNull null
-
+        val items = listOf(
             newMovieSearchResponse(
-                title,
-                href,
+                "TEST MOVIE",
+                "$mainUrl/test",
                 TvType.Movie
-            )
-        }
-            .distinctBy { it.url }
-            .take(30)
-
-        println("ITEMS FOUND = ${items.size}")
+            ) {
+                posterUrl =
+                    "https://via.placeholder.com/300x450.png"
+            }
+        )
 
         return newHomePageResponse(
-            listOf(
-                HomePageList(
-                    request.name,
-                    items
-                )
+            HomePageList(
+                "TEST",
+                items
             )
         )
     }
@@ -79,91 +54,33 @@ class ExampleProvider : MainAPI() {
         query: String
     ): List<SearchResponse> {
 
-        val searchUrl =
-            "$mainUrl/search?q=${query.replace(" ", "+")}"
-
-        val document = app.get(
-            searchUrl,
-            headers = stealthHeaders
-        ).document
-
-        return document.select(
-            ".cb-card, .movie-card, .item, .poster"
-        ).mapNotNull {
-            it.toSearchResult()
-        }
+        return listOf(
+            newMovieSearchResponse(
+                "TEST SEARCH",
+                "$mainUrl/test",
+                TvType.Movie
+            ) {
+                posterUrl =
+                    "https://via.placeholder.com/300x450.png"
+            }
+        )
     }
 
     override suspend fun load(
         url: String
     ): LoadResponse {
 
-        val document = app.get(
+        return newMovieLoadResponse(
+            "TEST MOVIE",
             url,
-            headers = stealthHeaders
-        ).document
+            TvType.Movie,
+            url
+        ) {
+            posterUrl =
+                "https://via.placeholder.com/300x450.png"
 
-        val title = document.selectFirst(
-            "h1, .cb-details-title, .entry-title"
-        )?.text()?.trim() ?: "Unknown"
-
-        val poster = document.selectFirst(
-            "meta[property=og:image]"
-        )?.attr("content")
-
-        val descriptionText = document.selectFirst(
-            ".description, .content, .entry-content, .overview"
-        )?.text()?.trim()
-
-        val yearString = document.selectFirst(
-            ".year, .date, .release"
-        )?.text() ?: ""
-
-        val year = yearString
-            .filter { it.isDigit() }
-            .toIntOrNull()
-
-        val isTv = url.contains("/tv") ||
-                url.contains("series") ||
-                url.contains("tv-shows")
-
-        return if (isTv) {
-
-            newTvSeriesLoadResponse(
-                title,
-                url,
-                TvType.TvSeries,
-                emptyList()
-            ) {
-                posterUrl = poster
-
-                if (descriptionText != null) {
-                    plot = descriptionText
-                }
-
-                if (year != null) {
-                    this.year = year
-                }
-            }
-
-        } else {
-
-            newMovieLoadResponse(
-                title,
-                url,
-                TvType.Movie,
-                url
-            ) {
-                posterUrl = poster
-
-                if (descriptionText != null) {
-                    plot = descriptionText
-                }
-
-                if (year != null) {
-                    this.year = year
-                }
-            }
+            plot = "Test description"
+            year = 2025
         }
     }
 
@@ -174,69 +91,16 @@ class ExampleProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
 
-        val document = app.get(
-            data,
-            headers = stealthHeaders
-        ).document
-
-        val iframe = document
-            .selectFirst("iframe")
-            ?.attr("src")
-            ?: return false
-
         callback.invoke(
             newExtractorLink(
                 source = name,
                 name = name,
-                url = fixUrl(iframe)
+                url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
             ) {
-                referer = "$mainUrl/"
-                quality = Qualities.Unknown.value
+                quality = Qualities.P1080.value
             }
         )
 
         return true
-    }
-
-    private fun Element.toSearchResult(): SearchResponse? {
-
-        val title = selectFirst(
-            ".cb-card-title, .movie-title, h2, h3, .title"
-        )?.text()?.trim()
-            ?: return null
-
-        val href = selectFirst("a")
-            ?.attr("href")
-            ?: return null
-
-        val poster = selectFirst("img")
-            ?.attr("data-src")
-            ?.takeIf { it.isNotBlank() }
-            ?: selectFirst("img")?.attr("src")
-
-        val isTv = href.contains("/tv") ||
-                href.contains("series") ||
-                href.contains("tv-shows")
-
-        return if (isTv) {
-
-            newTvSeriesSearchResponse(
-                title,
-                fixUrl(href),
-                TvType.TvSeries
-            ) {
-                posterUrl = poster
-            }
-
-        } else {
-
-            newMovieSearchResponse(
-                title,
-                fixUrl(href),
-                TvType.Movie
-            ) {
-                posterUrl = poster
-            }
-        }
     }
 }
