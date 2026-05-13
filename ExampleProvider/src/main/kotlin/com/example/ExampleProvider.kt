@@ -6,6 +6,7 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import org.json.JSONObject
 import java.net.URLEncoder
+import com.lagradost.cloudstream3.app
 
 class ExampleProvider : MainAPI() {
 
