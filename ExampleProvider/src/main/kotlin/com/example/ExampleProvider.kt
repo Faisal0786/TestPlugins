@@ -118,7 +118,7 @@ class ExampleProvider : MainAPI() {
     ): List<SearchResponse> {
 
         val document = app.get(
-            "$mainUrl/search?q=$query",
+            "$mainUrl/search?q=${URLEncoder.encode(query, "UTF-8")}"
             headers = mapOf(
                 "User-Agent" to USER_AGENT
             )
