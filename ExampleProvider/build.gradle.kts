@@ -7,11 +7,20 @@ dependencies {
 version = 200
 
 cloudstream {
+    name = "ExampleProvider"
     description = "Faisal's Premium Extension"
+
     authors = listOf("Faisal0786")
-    status = 1 
-    tvTypes = listOf("Movie", "TvSeries")
-    language = "hi"
+
+    status = 1
+
+    language = "en"
+
+    tvTypes = listOf(
+        "Movie",
+        "TvSeries"
+    )
+
     iconUrl = "https://streamimdb.ru/favicon.ico"
 }
 
