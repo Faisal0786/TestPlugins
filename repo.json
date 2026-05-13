@@ -4,8 +4,6 @@
   "authors": ["Faisal0786"],
   "manifestVersion": 1,
   "pluginLists": [
-    {
-      "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins-old/raw/refs/heads/builds/plugins.json"
-    }
+    "https://raw.githubusercontent.com/Faisal0786/TestPlugins-old/refs/heads/builds/plugins.json"
   ]
 }
