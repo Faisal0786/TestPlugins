@@ -5,7 +5,7 @@
   "manifestVersion": 1,
   "pluginLists": [
     {
-      "url": "https://github.com/Faisal0786/TestPlugins-old/raw/refs/heads/builds/plugins.json"
+      "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins-old/raw/refs/heads/builds/plugins.json"
     }
   ]
 }
