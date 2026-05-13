@@ -1,11 +1,11 @@
 {
-  [
-    "name": "ExampleProvider",
-    "description": "Cloudstream plugin",
-    "authors": ["Faisal0786"],
-    "manifestaVersion": 1,
-    "pluginLists":[
-    "url": "https://github.com/Faisal0786/TestPlugins-old/raw/refs/heads/builds/plugins.json",
-    
+  "name": "ExampleProvider",
+  "description": "Cloudstream plugin",
+  "authors": ["Faisal0786"],
+  "manifestVersion": 1,
+  "pluginLists": [
+    {
+      "url": "https://github.com/Faisal0786/TestPlugins-old/raw/refs/heads/builds/plugins.json"
+    }
   ]
 }
