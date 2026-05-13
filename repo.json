@@ -3,6 +3,6 @@
   "description": "Cloudstream Plugins",
   "manifestVersion": 200,
   "pluginLists": [
-    "https://cdn.jsdelivr.net/gh/Faisal0786/TestPlugins@master/builds/ExampleProvider.cs3"
+    "https://cdn.jsdelivr.net/gh/Faisal0786/TestPlugins@master/plugin.json"
   ]
 }
