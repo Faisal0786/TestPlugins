@@ -27,4 +27,5 @@ android {
         buildConfig = true
         viewBinding = true
     }
+    isCrossPlatform = true
 }
