@@ -1,10 +1,1 @@
-[
-  {
-    "internalName": "ExampleProvider",
-    "name": "StreamIMDB",
-    "url": "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/builds/ExampleProvider.cs3",
-    "version": 200,
-    "language": "en",
-    "status": 1
-  }
-]
+[{"name":"StreamIMDB","url":"https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/builds/ExampleProvider.cs3","version":200}]
