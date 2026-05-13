@@ -257,7 +257,7 @@ class ExampleProvider : MainAPI() {
                         TvType.TvSeries
                     ) {
                         this.posterUrl = poster
-                        this.rating = rating
+                        
                         this.year = parsedYear
                     }
 
@@ -269,7 +269,7 @@ class ExampleProvider : MainAPI() {
                         TvType.Movie
                     ) {
                         this.posterUrl = poster
-                        this.rating = rating
+                        
                         this.year = parsedYear
                     }
                 }
