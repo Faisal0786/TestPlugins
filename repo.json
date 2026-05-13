@@ -1,8 +1,0 @@
-{
-  "name": "Faisal's Repository",
-  "description": "Cloudstream Plugins",
-  "manifestVersion": 200,
-  "pluginLists": [
-    "https://github.com/Faisal0786/TestPlugins-old/blob/master/plugins.json"
-  ]
-}
