@@ -3,7 +3,6 @@ package com.example
 import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.Score
 import org.jsoup.nodes.Element
 import org.json.JSONObject
 import java.net.URLEncoder
@@ -14,7 +13,7 @@ class ExampleProvider : MainAPI() {
     override var name = "StreamIMDB"
     override val hasMainPage = true
     override var lang = "en"
-    override val hasQuickSearch = true
+    override val hasQuickSearch = false
 
     private val tmdbApi = "fceea78d0d9713c879f0cfeb0dbfb40b"
 
@@ -301,9 +300,7 @@ class ExampleProvider : MainAPI() {
 
             if (tmdbScore != null) {
 
-                this.score = Score.from10(
-                    tmdbScore / 10.0
-                )
+                this.rating = tmdbScore
             }
 
             if (!tmdbActors.isNullOrEmpty()) {
