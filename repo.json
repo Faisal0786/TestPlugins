@@ -1,7 +1,7 @@
 {
   "name": "Faisal's Repository",
   "description": "Cloudstream Plugins",
-  "manifestVersion": 1,
+  "manifestVersion": 200,
   "pluginLists": [
     "https://raw.githubusercontent.com/Faisal0786/TestPlugins/master/plugins.json"
   ]
