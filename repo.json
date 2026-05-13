@@ -1,0 +1,12 @@
+[
+  {
+    "name": "ExampleProvider",
+    "description": "Cloudstream plugin",
+    "authors": ["Faisal0786"],
+    "version": 1,
+    "status": 1,
+    "tvTypes": ["Movie", "TvSeries"],
+    "url": "https://github.com/Faisal0786/TestPlugins-old/raw/refs/heads/builds/ExampleProvider.cs3",
+    "iconUrl": ""
+  }
+]
