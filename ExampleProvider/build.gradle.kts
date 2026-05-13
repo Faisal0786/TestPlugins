@@ -7,18 +7,14 @@ version = 200
 
 cloudstream {
     description = "Faisal's Premium Extension"
-
     authors = listOf("Faisal0786")
-
     status = 1
-
+    apiVersion = 2
     tvTypes = listOf(
         "Movie",
         "TvSeries"
     )
-
     language = "en"
-
     iconUrl = "https://streamimdb.ru/favicon.ico"
 }
 
@@ -27,5 +23,4 @@ android {
         buildConfig = true
         viewBinding = true
     }
-    
 }
