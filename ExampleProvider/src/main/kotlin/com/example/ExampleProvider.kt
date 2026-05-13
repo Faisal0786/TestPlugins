@@ -23,10 +23,11 @@ class ExampleProvider : MainAPI() {
         TvType.TvSeries
     )
 
+    // ✅ SIRF YAHI BADLA HAI - $mainUrl ki jagah hardcoded URL
     override val mainPage = mainPageOf(
-        "$mainUrl/movies" to "Latest Movies",
-        "$mainUrl/most-viewed" to "Trending",
-        "$mainUrl/most-viewed-tv" to "Top TV"
+        "https://streamimdb.ru/movies" to "Latest Movies",
+        "https://streamimdb.ru/most-viewed" to "Trending",
+        "https://streamimdb.ru/most-viewed-tv" to "Top TV"
     )
 
     override suspend fun getMainPage(
