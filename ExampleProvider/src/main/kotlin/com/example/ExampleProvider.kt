@@ -1,5 +1,5 @@
 package com.example
-import com.lagradost.cloudstream3.Score
+
 import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -77,6 +77,7 @@ class ExampleProvider : MainAPI() {
         )
 
         return if (href.contains("/tv/")) {
+
             newTvSeriesSearchResponse(
                 title,
                 href,
@@ -84,7 +85,9 @@ class ExampleProvider : MainAPI() {
             ) {
                 this.posterUrl = poster
             }
+
         } else {
+
             newMovieSearchResponse(
                 title,
                 href,
@@ -160,7 +163,6 @@ class ExampleProvider : MainAPI() {
         var tmdbPoster: String? = sitePoster
         var tmdbBackdrop: String? = null
         var tmdbYear: Int? = year
-        var tmdbScore: Int? = null
         var tmdbActors: List<ActorData>? = null
 
         try {
@@ -192,10 +194,6 @@ class ExampleProvider : MainAPI() {
 
                 val movieId = movie
                     .getInt("id")
-
-                tmdbScore =
-                    (movie.getDouble("vote_average") * 10)
-                        .toInt()
 
                 if (!movie.isNull("poster_path")) {
 
@@ -282,10 +280,6 @@ class ExampleProvider : MainAPI() {
                 this.year =
                     tmdbYear ?: year
 
-                if (tmdbScore != null) {
-                    this.score = score.from10(tmdbScore)
-                }
-
                 if (!tmdbActors.isNullOrEmpty()) {
                     this.actors = tmdbActors
                 }
@@ -311,10 +305,6 @@ class ExampleProvider : MainAPI() {
 
                 this.year =
                     tmdbYear ?: year
-
-                if (tmdbScore != null) {
-                    this.score = score.from10(tmdbScore)
-                }
 
                 if (!tmdbActors.isNullOrEmpty()) {
                     this.actors = tmdbActors
