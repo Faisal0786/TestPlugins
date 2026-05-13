@@ -321,16 +321,6 @@ class ExampleProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
 
-        callback.invoke(
-            newExtractorLink(
-                source = name,
-                name = name,
-                url = data
-            ) {
-                referer = ""
-                quality = Qualities.Unknown.value
-            }
-        )
 
         return true
     }
