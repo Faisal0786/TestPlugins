@@ -38,7 +38,7 @@ subprojects {
     apply(plugin = "com.lagradost.cloudstream3.gradle")
 
     cloudstream {
-        setRepo("Faisal0786/TestPlugins")
+        setRepo("Faisal0786/TestPlugins-old")
     }
 
     android {
