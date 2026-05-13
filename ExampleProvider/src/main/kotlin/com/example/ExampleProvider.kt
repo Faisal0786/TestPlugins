@@ -283,7 +283,7 @@ class ExampleProvider : MainAPI() {
                     tmdbYear ?: year
 
                 if (tmdbScore != null) {
-                    this.rating = tmdbScore
+                    this.score = tmdbScore
                 }
 
                 if (!tmdbActors.isNullOrEmpty()) {
@@ -313,7 +313,7 @@ class ExampleProvider : MainAPI() {
                     tmdbYear ?: year
 
                 if (tmdbScore != null) {
-                    this.rating = tmdbScore
+                    this.score = tmdbScore
                 }
 
                 if (!tmdbActors.isNullOrEmpty()) {
