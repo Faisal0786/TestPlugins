@@ -13,7 +13,7 @@ cloudstream {
         "Movie",
         "TvSeries"
     )
-    hasMainPage = true
+    
     language = "en"
     iconUrl = "https://streamimdb.ru/favicon.ico"
 }
