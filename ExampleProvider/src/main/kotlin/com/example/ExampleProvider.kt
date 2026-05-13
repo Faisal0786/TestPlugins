@@ -1,5 +1,5 @@
 package com.example
-
+import com.lagradost.cloudstream3.Score
 import android.util.Log
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
@@ -283,7 +283,7 @@ class ExampleProvider : MainAPI() {
                     tmdbYear ?: year
 
                 if (tmdbScore != null) {
-                    this.score = tmdbScore
+                    this.score = score.from10(tmdbScore)
                 }
 
                 if (!tmdbActors.isNullOrEmpty()) {
@@ -313,7 +313,7 @@ class ExampleProvider : MainAPI() {
                     tmdbYear ?: year
 
                 if (tmdbScore != null) {
-                    this.score = tmdbScore
+                    this.score = score.from10(tmdbScore)
                 }
 
                 if (!tmdbActors.isNullOrEmpty()) {
