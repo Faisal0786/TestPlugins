@@ -3,23 +3,21 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
 
-// Use an integer for version numbers
 version = 200
 
 cloudstream {
-    name = "ExampleProvider"
     description = "Faisal's Premium Extension"
 
     authors = listOf("Faisal0786")
 
     status = 1
 
-    language = "en"
-
     tvTypes = listOf(
         "Movie",
         "TvSeries"
     )
+
+    language = "en"
 
     iconUrl = "https://streamimdb.ru/favicon.ico"
 }
