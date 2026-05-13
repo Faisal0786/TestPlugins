@@ -486,11 +486,122 @@ class ExampleProvider : MainAPI() {
 
         return if (url.contains("/tv/")) {
 
+            val seasons = mutableListOf<SeasonData>()
+
+            try {
+
+                val cleanTitle = title
+                    .substringBefore("(")
+                    .trim()
+
+                val encodedTitle = URLEncoder.encode(
+                    cleanTitle,
+                    "UTF-8"
+                )
+
+                val tvSearch = app.get(
+                    "https://api.themoviedb.org/3/search/tv?api_key=$tmdbApi&query=$encodedTitle"
+                ).text
+
+                val tvJson = JSONObject(tvSearch)
+
+                val tvResults = tvJson
+                    .getJSONArray("results")
+
+                if (tvResults.length() > 0) {
+
+                    val tv = tvResults
+                        .getJSONObject(0)
+
+                    val tvId = tv
+                        .getInt("id")
+
+                    val tvDetails = JSONObject(
+                        app.get(
+                            "https://api.themoviedb.org/3/tv/$tvId?api_key=$tmdbApi&append_to_response=credits"
+                        ).text
+                    )
+
+                    val seasonCount =
+                        tvDetails.optInt("number_of_seasons")
+
+                    for (seasonNumber in 1..seasonCount) {
+
+                        try {
+
+                            val seasonJson = JSONObject(
+                                app.get(
+                                    "https://api.themoviedb.org/3/tv/$tvId/season/$seasonNumber?api_key=$tmdbApi"
+                                ).text
+                            )
+
+                            val episodesArray =
+                                seasonJson.getJSONArray("episodes")
+
+                            val episodeList =
+                                mutableListOf<Episode>()
+
+                            for (j in 0 until episodesArray.length()) {
+
+                                val ep =
+                                    episodesArray.getJSONObject(j)
+
+                                val epName =
+                                    ep.optString("name")
+
+                                val epNumber =
+                                    ep.optInt("episode_number")
+
+                                val epPoster =
+                                    ep.optString("still_path")
+
+                                val posterUrl =
+                                    if (epPoster.isNotBlank()) {
+                                        "https://image.tmdb.org/t/p/w500$epPoster"
+                                    } else {
+                                        null
+                                    }
+
+                                val episodeData =
+                                    "$url|$seasonNumber|$epNumber"
+
+                                episodeList.add(
+                                    Episode(
+                                        episodeData,
+                                        epName
+                                    ) {
+                                        this.season = seasonNumber
+                                        this.episode = epNumber
+                                        this.posterUrl = posterUrl
+                                    }
+                                )
+                            }
+
+                            seasons.add(
+                                SeasonData(
+                                    seasonNumber,
+                                    episodeList
+                                )
+                            )
+
+                        } catch (_: Exception) {
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+
+                Log.e(
+                    "StreamIMDB",
+                    "TV ERROR: ${e.message}"
+                )
+            }
+
             newTvSeriesLoadResponse(
                 title,
                 url,
                 TvType.TvSeries,
-                emptyList()
+                seasons
             ) {
 
                 this.posterUrl =
