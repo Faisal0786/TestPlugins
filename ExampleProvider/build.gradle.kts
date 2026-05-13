@@ -9,7 +9,6 @@ cloudstream {
     description = "Faisal's Premium Extension"
     authors = listOf("Faisal0786")
     status = 1
-    apiVersion = 2
     tvTypes = listOf(
         "Movie",
         "TvSeries"
