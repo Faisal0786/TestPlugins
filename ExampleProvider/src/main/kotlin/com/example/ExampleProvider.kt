@@ -362,7 +362,7 @@ class ExampleProvider : MainAPI() {
 
         try {
 
-            val parts = data.split("|")
+            val parts = data.split("|".toRegex(RegexOption.LITERAL))
 
             val imdbId = parts[0]
             val type = parts[1]
@@ -619,7 +619,7 @@ class ExampleProvider : MainAPI() {
         val credits: Credits? = null,
 
         @JsonProperty("videos")
-        val videos: TrailerResults? = null,
+        val TrailerResults? = null,
 
         @JsonProperty("external_ids")
         val externalIds: ExternalIds? = null,
