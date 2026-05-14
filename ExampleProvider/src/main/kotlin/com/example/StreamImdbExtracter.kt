@@ -17,7 +17,7 @@ object StreamIMDBExtractor {
 
         try {
 
-            val parts = data.split("\\|")
+            val parts = data.split("|")
 
             val imdbId = parts[0]
             val type = parts[1]
