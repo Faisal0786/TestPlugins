@@ -408,10 +408,14 @@ class ExampleProvider : MainAPI() {
                         source = name,
                         name = "$name Server ${i + 1}",
                         url = streamUrl,
-                        referer = "https://brightpathsignals.com/",
-                        quality = Qualities.Unknown.value,
                         type = ExtractorLinkType.M3U8
-                    )
+                    ) {
+                        headers = mapOf(
+                            "Referer" to "https://brightpathsignals.com/"
+                        )
+                
+                        quality = Qualities.Unknown.value
+                    }
                 )
             }
 
