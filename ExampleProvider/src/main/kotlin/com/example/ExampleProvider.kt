@@ -1,12 +1,13 @@
 package com.example
 
-import android.util.Log
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
-import org.jsoup.nodes.Element
-import org.json.JSONObject
-import java.net.URLEncoder
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
 
 class ExampleProvider : MainAPI() {
 
@@ -18,50 +19,47 @@ class ExampleProvider : MainAPI() {
     override val hasMainPage = true
     override val hasQuickSearch = true
 
-    private val tmdbApi = "fceea78d0d9713c879f0cfeb0dbfb40b"
-
     override var supportedTypes = setOf(
         TvType.Movie,
-        TvType.TvSeries
+        TvType.TvSeries,
+        TvType.Anime
     )
+
+    private val apiUrl = "https://api.themoviedb.org/3"
+
+    companion object {
+        private const val apiKey = "fceea78d0d9713c879f0cfeb0dbfb40b"
+    }
 
     override val mainPage = mainPageOf(
 
-        "trending/all/day" to "Trending",
-        "movie/popular" to "Popular Movies",
-        "movie/top_rated" to "Top Rated Movies",
-        "movie/now_playing" to "Now Playing",
-        "movie/upcoming" to "Upcoming Movies",
+        "trending/all/day?api_key=$apiKey" to "Trending",
 
-        "tv/popular" to "Popular TV",
-        "tv/top_rated" to "Top Rated TV",
-        "tv/airing_today" to "Airing Today",
-        "tv/on_the_air" to "On The Air",
+        "movie/popular?api_key=$apiKey" to "Popular Movies",
 
-        "discover/movie?with_genres=28" to "Action Movies",
-        "discover/movie?with_genres=35" to "Comedy Movies",
-        "discover/movie?with_genres=27" to "Horror Movies",
-        "discover/movie?with_genres=878" to "Sci-Fi Movies",
-        "discover/movie?with_genres=53" to "Thriller Movies",
-        "discover/movie?with_genres=80" to "Crime Movies",
-        "discover/movie?with_genres=10749" to "Romance Movies",
-        "discover/movie?with_genres=12" to "Adventure Movies",
-        "discover/movie?with_genres=16" to "Animation Movies",
+        "tv/popular?api_key=$apiKey" to "Popular TV",
 
-        "discover/tv?with_genres=16&with_origin_country=JP" to "Anime",
+        "movie/top_rated?api_key=$apiKey" to "Top Rated Movies",
 
-        "discover/movie?with_watch_providers=8&watch_region=US" to "Netflix",
-        "discover/movie?with_watch_providers=9&watch_region=US" to "Amazon Prime",
-        "discover/movie?with_watch_providers=337&watch_region=US" to "Disney+",
-        "discover/movie?with_watch_providers=350&watch_region=US" to "Apple TV+",
-        "discover/movie?with_watch_providers=384&watch_region=US" to "HBO Max",
-        "discover/movie?with_watch_providers=15&watch_region=US" to "Hulu",
-        "discover/movie?with_watch_providers=531&watch_region=US" to "Paramount+",
-        "discover/movie?with_watch_providers=39&watch_region=IN" to "Hotstar",
-        "discover/movie?with_watch_providers=237&watch_region=IN" to "SonyLIV",
-        "discover/movie?with_watch_providers=2326&watch_region=IN" to "ZEE5",
-        "discover/tv?with_watch_providers=283&watch_region=US" to "Crunchyroll",
-        "discover/movie?with_companies=3" to "Pixar"
+        "tv/top_rated?api_key=$apiKey" to "Top Rated TV",
+
+        "movie/now_playing?api_key=$apiKey" to "Now Playing",
+
+        "movie/upcoming?api_key=$apiKey" to "Upcoming Movies",
+
+        "discover/movie?api_key=$apiKey&with_genres=28" to "Action Movies",
+
+        "discover/movie?api_key=$apiKey&with_genres=35" to "Comedy Movies",
+
+        "discover/movie?api_key=$apiKey&with_genres=27" to "Horror Movies",
+
+        "discover/movie?api_key=$apiKey&with_genres=878" to "Sci-Fi Movies",
+
+        "discover/tv?api_key=$apiKey&with_genres=16&with_origin_country=JP" to "Anime",
+
+        "discover/movie?api_key=$apiKey&with_watch_providers=8&watch_region=US" to "Netflix",
+
+        "discover/movie?api_key=$apiKey&with_watch_providers=9&watch_region=US" to "Amazon Prime"
     )
 
     override suspend fun getMainPage(
@@ -69,116 +67,13 @@ class ExampleProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
 
-        val separator =
-            if (request.data.contains("?")) "&"
-            else "?"
+        val home = app.get(
+            "$apiUrl/${request.data}&page=$page"
+        ).parsedSafe<Results>()?.results?.mapNotNull {
 
-        val json = app.get(
-            "https://api.themoviedb.org/3/${request.data}${separator}api_key=$tmdbApi&page=$page"
-        ).text
+            it.toSearchResponse()
 
-        val results = JSONObject(json)
-            .getJSONArray("results")
-
-        val home = mutableListOf<SearchResponse>()
-
-        for (i in 0 until results.length()) {
-
-            val item = results.getJSONObject(i)
-
-            val mediaType =
-                if (
-                    item.optString("media_type") == "tv" ||
-                    item.has("name")
-                ) {
-                    "tv"
-                } else {
-                    "movie"
-                }
-
-            val title =
-                if (mediaType == "tv") {
-                    item.optString("name")
-                } else {
-                    item.optString("title")
-                }
-
-            val posterPath =
-                item.optString("poster_path")
-
-            if (posterPath.isBlank())
-                continue
-
-            val poster =
-                "https://image.tmdb.org/t/p/w500$posterPath"
-
-            val rating =
-                item.optDouble("vote_average")
-                    .times(10)
-                    .toInt()
-
-            val year =
-                if (mediaType == "tv") {
-                    item.optString("first_air_date")
-                } else {
-                    item.optString("release_date")
-                }
-
-            val parsedYear =
-                year.substringBefore("-")
-                    .toIntOrNull()
-
-            val searchQuery =
-                URLEncoder.encode(
-                    title,
-                    "UTF-8"
-                )
-
-            val searchDocument = app.get(
-                "$mainUrl/search?q=$searchQuery",
-                headers = mapOf(
-                    "User-Agent" to USER_AGENT
-                )
-            ).document
-
-            val matchedCard = searchDocument
-                .select(".cb-card")
-                .firstOrNull()
-
-            val realUrl = matchedCard
-                ?.selectFirst("a")
-                ?.attr("href")
-                ?.let { fixUrlNull(it) }
-                ?: continue
-
-            val response =
-                if (mediaType == "tv") {
-
-                    newTvSeriesSearchResponse(
-                        title,
-                        realUrl,
-                        TvType.TvSeries
-                    ) {
-                        this.posterUrl = poster
-                        this.rating = rating
-                        this.year = parsedYear
-                    }
-
-                } else {
-
-                    newMovieSearchResponse(
-                        title,
-                        realUrl,
-                        TvType.Movie
-                    ) {
-                        this.posterUrl = poster
-                        this.rating = rating
-                        this.year = parsedYear
-                    }
-                }
-
-            home.add(response)
-        }
+        } ?: emptyList()
 
         return newHomePageResponse(
             request.name,
@@ -186,267 +81,200 @@ class ExampleProvider : MainAPI() {
         )
     }
 
-    private fun Element.toSearchResult(): SearchResponse? {
+    private fun Media.toSearchResponse(): SearchResponse? {
 
-        val anchor = selectFirst("a")
-        val image = selectFirst("img")
+        val mediaType =
+            mediaType ?: if (title != null) "movie" else "tv"
 
-        val title = image
-            ?.attr("alt")
-            ?.trim()
-            ?: return null
+        val tvType =
+            if (mediaType == "tv") TvType.TvSeries
+            else TvType.Movie
 
-        val href = fixUrlNull(
-            anchor?.attr("href")
-        ) ?: return null
-
-        val poster = fixUrlNull(
-            image.attr("src")
-        )
-
-        return if (href.contains("/tv/")) {
+        return if (tvType == TvType.TvSeries) {
 
             newTvSeriesSearchResponse(
-                title,
-                href,
-                TvType.TvSeries
+                name ?: title ?: return null,
+                LinkData(
+                    id,
+                    mediaType
+                ).toJson(),
+                tvType
             ) {
-                this.posterUrl = poster
+
+                this.posterUrl =
+                    getImageUrl(posterPath)
+
+                this.score =
+                    Score.from10(voteAverage)
             }
 
         } else {
 
             newMovieSearchResponse(
-                title,
-                href,
-                TvType.Movie
+                title ?: name ?: return null,
+                LinkData(
+                    id,
+                    mediaType
+                ).toJson(),
+                tvType
             ) {
-                this.posterUrl = poster
+
+                this.posterUrl =
+                    getImageUrl(posterPath)
+
+                this.score =
+                    Score.from10(voteAverage)
             }
         }
+    }
+
+    override suspend fun quickSearch(
+        query: String
+    ): List<SearchResponse>? {
+
+        return search(query)
     }
 
     override suspend fun search(
         query: String
     ): List<SearchResponse> {
 
-        val document = app.get(
-            "$mainUrl/search?q=${URLEncoder.encode(query, "UTF-8")}",
-            headers = mapOf(
-                "User-Agent" to USER_AGENT
-            )
-        ).document
+        return app.get(
+            "$apiUrl/search/multi?api_key=$apiKey&query=$query"
+        ).parsedSafe<Results>()?.results?.mapNotNull {
 
-        return document
-            .select(".cb-card")
-            .mapNotNull {
-                it.toSearchResult()
-            }
+            if (it.mediaType == "person")
+                return@mapNotNull null
+
+            it.toSearchResponse()
+
+        } ?: emptyList()
     }
 
     override suspend fun load(
         url: String
-    ): LoadResponse {
+    ): LoadResponse? {
 
-        val document = app.get(
-            fixUrl(url),
-            headers = mapOf(
-                "User-Agent" to USER_AGENT
-            )
-        ).document
+        val data =
+            parseJson<LinkData>(url)
 
-        val rawTitle = document
-            .selectFirst("meta[property=og:title]")
-            ?.attr("content")
-            ?: "No Title"
+        val type =
+            if (data.type == "tv")
+                TvType.TvSeries
+            else
+                TvType.Movie
 
-        val title = rawTitle
-            .replace("Watch ", "")
-            .substringBefore(" Online")
-            .trim()
+        val append =
+            "credits,videos,external_ids,recommendations"
 
-        val description = document
-            .selectFirst("meta[property=og:description]")
-            ?.attr("content")
+        val loadUrl =
+            if (type == TvType.Movie) {
 
-        val sitePoster = fixUrlNull(
-            document.selectFirst(
-                "meta[property=og:image]"
-            )?.attr("content")
-        )
+                "$apiUrl/movie/${data.id}?api_key=$apiKey&append_to_response=$append"
 
-        val year = Regex("""\((\d{4})\)""")
-            .find(title)
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.toIntOrNull()
+            } else {
 
-        var tmdbPoster: String? = sitePoster
-        var tmdbBackdrop: String? = null
-        var tmdbYear: Int? = year
-        var tmdbActors: List<ActorData>? = null
+                "$apiUrl/tv/${data.id}?api_key=$apiKey&append_to_response=$append"
+            }
 
-        if (url.contains("/tv/")) {
+        val res = app.get(loadUrl)
+            .parsedSafe<MediaDetail>()
+            ?: return null
 
-            val episodes = mutableListOf<Episode>()
+        val title =
+            res.title ?: res.name ?: return null
 
-            try {
+        val poster =
+            getImageUrl(res.posterPath)
 
-                val cleanTitle = title
-                    .substringBefore("(")
-                    .trim()
+        val backdrop =
+            getImageUrl(res.backdropPath)
 
-                val encodedTitle = URLEncoder.encode(
-                    cleanTitle,
-                    "UTF-8"
+        val year =
+            (res.releaseDate ?: res.firstAirDate)
+                ?.substringBefore("-")
+                ?.toIntOrNull()
+
+        val genres =
+            res.genres?.mapNotNull {
+                it.name
+            }
+
+        val actors =
+            res.credits?.cast?.mapNotNull {
+
+                ActorData(
+                    Actor(
+                        it.name ?: return@mapNotNull null,
+                        getImageUrl(it.profilePath)
+                    ),
+                    roleString = it.character
                 )
 
-                val tmdbSearch = app.get(
-                    "https://api.themoviedb.org/3/search/tv?api_key=$tmdbApi&query=$encodedTitle"
-                ).text
+            } ?: emptyList()
 
-                val tmdbJson = JSONObject(
-                    tmdbSearch
-                )
+        val recommendations =
+            res.recommendations?.results?.mapNotNull {
+                it.toSearchResponse()
+            }
 
-                val results = tmdbJson
-                    .getJSONArray("results")
+        val trailers =
+            res.videos?.results?.mapNotNull {
 
-                if (results.length() > 0) {
-
-                    val tv =
-                        results.getJSONObject(0)
-
-                    val tvId =
-                        tv.getInt("id")
-
-                    if (!tv.isNull("poster_path")) {
-
-                        tmdbPoster =
-                            "https://image.tmdb.org/t/p/w500" +
-                                tv.getString("poster_path")
-                    }
-
-                    if (!tv.isNull("backdrop_path")) {
-
-                        tmdbBackdrop =
-                            "https://image.tmdb.org/t/p/original" +
-                                tv.getString("backdrop_path")
-                    }
-
-                    tmdbYear =
-                        tv.getString("first_air_date")
-                            .substringBefore("-")
-                            .toIntOrNull()
-
-                    val detailsResponse = app.get(
-                        "https://api.themoviedb.org/3/tv/$tvId?api_key=$tmdbApi&append_to_response=credits"
-                    ).text
-
-                    val detailsJson =
-                        JSONObject(detailsResponse)
-
-                    val castArray = detailsJson
-                        .getJSONObject("credits")
-                        .getJSONArray("cast")
-
-                    val actorList =
-                        mutableListOf<ActorData>()
-
-                    for (
-                        i in 0 until minOf(
-                            10,
-                            castArray.length()
-                        )
-                    ) {
-
-                        val actor =
-                            castArray.getJSONObject(i)
-
-                        actorList.add(
-                            ActorData(
-                                Actor(
-                                    actor.getString("name")
-                                )
-                            )
-                        )
-                    }
-
-                    tmdbActors = actorList
-
-                    val seasonCount =
-                        detailsJson.optInt(
-                            "number_of_seasons"
-                        )
-
-                    for (seasonNumber in 1..seasonCount) {
-
-                        try {
-
-                            val seasonJson = JSONObject(
-                                app.get(
-                                    "https://api.themoviedb.org/3/tv/$tvId/season/$seasonNumber?api_key=$tmdbApi"
-                                ).text
-                            )
-
-                            val episodesArray =
-                                seasonJson.getJSONArray(
-                                    "episodes"
-                                )
-
-                            for (
-                                j in 0 until episodesArray.length()
-                            ) {
-
-                                val ep =
-                                    episodesArray.getJSONObject(j)
-
-                                val epName =
-                                    ep.optString("name")
-
-                                val epNumber =
-                                    ep.optInt(
-                                        "episode_number"
-                                    )
-
-                                val epPoster =
-                                    ep.optString(
-                                        "still_path"
-                                    )
-
-                                val episodePoster =
-                                    if (epPoster.isNotBlank()) {
-                                        "https://image.tmdb.org/t/p/w500$epPoster"
-                                    } else {
-                                        null
-                                    }
-
-                                val episodeData =
-                                    "$url|$seasonNumber|$epNumber"
-
-                                episodes.add(
-                                    newEpisode(
-                                        episodeData
-                                    ) {
-                                        this.name = epName
-                                        this.season = seasonNumber
-                                        this.episode = epNumber
-                                        this.posterUrl = episodePoster
-                                    }
-                                )
-                            }
-
-                        } catch (_: Exception) {
-                        }
-                    }
+                it.key?.let { key ->
+                    "https://www.youtube.com/watch?v=$key"
                 }
 
-            } catch (e: Exception) {
+            } ?: emptyList()
 
-                Log.e(
-                    "StreamIMDB",
-                    "TV ERROR: ${e.message}"
-                )
+        if (type == TvType.TvSeries) {
+
+            val episodes =
+                mutableListOf<Episode>()
+
+            res.seasons?.forEach { season ->
+
+                val seasonNumber =
+                    season.seasonNumber ?: return@forEach
+
+                if (seasonNumber == 0)
+                    return@forEach
+
+                val seasonData = app.get(
+                    "$apiUrl/tv/${data.id}/season/$seasonNumber?api_key=$apiKey"
+                ).parsedSafe<SeasonDetail>()
+                    ?: return@forEach
+
+                seasonData.episodes?.forEach { ep ->
+
+                    episodes.add(
+                        newEpisode(
+                            EpisodeData(
+                                data.id,
+                                seasonNumber,
+                                ep.episodeNumber
+                            ).toJson()
+                        ) {
+
+                            this.name = ep.name
+
+                            this.season =
+                                seasonNumber
+
+                            this.episode =
+                                ep.episodeNumber
+
+                            this.posterUrl =
+                                getImageUrl(ep.stillPath)
+
+                            this.description =
+                                ep.overview
+
+                            this.score =
+                                Score.from10(ep.voteAverage)
+                        }
+                    )
+                }
             }
 
             return newTvSeriesLoadResponse(
@@ -456,117 +284,36 @@ class ExampleProvider : MainAPI() {
                 episodes
             ) {
 
-                this.posterUrl =
-                    tmdbPoster ?: sitePoster
+                this.posterUrl = poster
 
                 this.backgroundPosterUrl =
-                    tmdbBackdrop
+                    backdrop
+
+                this.year = year
 
                 this.plot =
-                    description
+                    res.overview
 
-                this.year =
-                    tmdbYear ?: year
+                this.tags =
+                    genres
 
-                if (!tmdbActors.isNullOrEmpty()) {
-                    this.actors = tmdbActors
-                }
+                this.actors =
+                    actors
+
+                this.recommendations =
+                    recommendations
+
+                this.score =
+                    Score.from10(res.voteAverage)
+
+                addTrailer(trailers)
+
+                addImdbId(
+                    res.externalIds?.imdbId
+                )
             }
 
         } else {
-
-            try {
-
-                val cleanTitle = title
-                    .substringBefore("(")
-                    .trim()
-
-                val encodedTitle = URLEncoder.encode(
-                    cleanTitle,
-                    "UTF-8"
-                )
-
-                val tmdbSearch = app.get(
-                    "https://api.themoviedb.org/3/search/movie?api_key=$tmdbApi&query=$encodedTitle"
-                ).text
-
-                val tmdbJson = JSONObject(
-                    tmdbSearch
-                )
-
-                val results = tmdbJson
-                    .getJSONArray("results")
-
-                if (results.length() > 0) {
-
-                    val movie =
-                        results.getJSONObject(0)
-
-                    val movieId =
-                        movie.getInt("id")
-
-                    if (!movie.isNull("poster_path")) {
-
-                        tmdbPoster =
-                            "https://image.tmdb.org/t/p/w500" +
-                                movie.getString("poster_path")
-                    }
-
-                    if (!movie.isNull("backdrop_path")) {
-
-                        tmdbBackdrop =
-                            "https://image.tmdb.org/t/p/original" +
-                                movie.getString("backdrop_path")
-                    }
-
-                    tmdbYear =
-                        movie.getString("release_date")
-                            .substringBefore("-")
-                            .toIntOrNull()
-
-                    val detailsResponse = app.get(
-                        "https://api.themoviedb.org/3/movie/$movieId?api_key=$tmdbApi&append_to_response=credits"
-                    ).text
-
-                    val detailsJson =
-                        JSONObject(detailsResponse)
-
-                    val castArray = detailsJson
-                        .getJSONObject("credits")
-                        .getJSONArray("cast")
-
-                    val actorList =
-                        mutableListOf<ActorData>()
-
-                    for (
-                        i in 0 until minOf(
-                            10,
-                            castArray.length()
-                        )
-                    ) {
-
-                        val actor =
-                            castArray.getJSONObject(i)
-
-                        actorList.add(
-                            ActorData(
-                                Actor(
-                                    actor.getString("name")
-                                )
-                            )
-                        )
-                    }
-
-                    tmdbActors = actorList
-                }
-
-            } catch (e: Exception) {
-
-                Log.e(
-                    "StreamIMDB",
-                    "MOVIE ERROR: ${e.message}"
-                )
-            }
 
             return newMovieLoadResponse(
                 title,
@@ -575,21 +322,33 @@ class ExampleProvider : MainAPI() {
                 url
             ) {
 
-                this.posterUrl =
-                    tmdbPoster ?: sitePoster
+                this.posterUrl = poster
 
                 this.backgroundPosterUrl =
-                    tmdbBackdrop
+                    backdrop
+
+                this.year = year
 
                 this.plot =
-                    description
+                    res.overview
 
-                this.year =
-                    tmdbYear ?: year
+                this.tags =
+                    genres
 
-                if (!tmdbActors.isNullOrEmpty()) {
-                    this.actors = tmdbActors
-                }
+                this.actors =
+                    actors
+
+                this.recommendations =
+                    recommendations
+
+                this.score =
+                    Score.from10(res.voteAverage)
+
+                addTrailer(trailers)
+
+                addImdbId(
+                    res.externalIds?.imdbId
+                )
             }
         }
     }
@@ -603,4 +362,175 @@ class ExampleProvider : MainAPI() {
 
         return true
     }
+
+    private fun getImageUrl(
+        path: String?
+    ): String? {
+
+        if (path.isNullOrBlank())
+            return null
+
+        return "https://image.tmdb.org/t/p/w500$path"
+    }
+
+    data class LinkData(
+        val id: Int? = null,
+        val type: String? = null
+    )
+
+    data class EpisodeData(
+        val id: Int? = null,
+        val season: Int? = null,
+        val episode: Int? = null
+    )
+
+    data class Results(
+
+        @JsonProperty("results")
+        val results: List<Media>? = arrayListOf()
+    )
+
+    data class Media(
+
+        @JsonProperty("id")
+        val id: Int? = null,
+
+        @JsonProperty("title")
+        val title: String? = null,
+
+        @JsonProperty("name")
+        val name: String? = null,
+
+        @JsonProperty("media_type")
+        val mediaType: String? = null,
+
+        @JsonProperty("poster_path")
+        val posterPath: String? = null,
+
+        @JsonProperty("vote_average")
+        val voteAverage: Double? = null
+    )
+
+    data class Genres(
+
+        @JsonProperty("name")
+        val name: String? = null
+    )
+
+    data class Cast(
+
+        @JsonProperty("name")
+        val name: String? = null,
+
+        @JsonProperty("character")
+        val character: String? = null,
+
+        @JsonProperty("profile_path")
+        val profilePath: String? = null
+    )
+
+    data class Credits(
+
+        @JsonProperty("cast")
+        val cast: List<Cast>? = arrayListOf()
+    )
+
+    data class Trailer(
+
+        @JsonProperty("key")
+        val key: String? = null
+    )
+
+    data class TrailerResults(
+
+        @JsonProperty("results")
+        val results: List<Trailer>? = arrayListOf()
+    )
+
+    data class ExternalIds(
+
+        @JsonProperty("imdb_id")
+        val imdbId: String? = null
+    )
+
+    data class Seasons(
+
+        @JsonProperty("season_number")
+        val seasonNumber: Int? = null
+    )
+
+    data class EpisodeItem(
+
+        @JsonProperty("name")
+        val name: String? = null,
+
+        @JsonProperty("overview")
+        val overview: String? = null,
+
+        @JsonProperty("episode_number")
+        val episodeNumber: Int? = null,
+
+        @JsonProperty("still_path")
+        val stillPath: String? = null,
+
+        @JsonProperty("vote_average")
+        val voteAverage: Double? = null
+    )
+
+    data class SeasonDetail(
+
+        @JsonProperty("episodes")
+        val episodes: List<EpisodeItem>? = arrayListOf()
+    )
+
+    data class RecommendationResults(
+
+        @JsonProperty("results")
+        val results: List<Media>? = arrayListOf()
+    )
+
+    data class MediaDetail(
+
+        @JsonProperty("title")
+        val title: String? = null,
+
+        @JsonProperty("name")
+        val name: String? = null,
+
+        @JsonProperty("overview")
+        val overview: String? = null,
+
+        @JsonProperty("poster_path")
+        val posterPath: String? = null,
+
+        @JsonProperty("backdrop_path")
+        val backdropPath: String? = null,
+
+        @JsonProperty("release_date")
+        val releaseDate: String? = null,
+
+        @JsonProperty("first_air_date")
+        val firstAirDate: String? = null,
+
+        @JsonProperty("vote_average")
+        val voteAverage: Double? = null,
+
+        @JsonProperty("genres")
+        val genres: List<Genres>? = arrayListOf(),
+
+        @JsonProperty("credits")
+        val credits: Credits? = null,
+
+        @JsonProperty("videos")
+        val videos: TrailerResults? = null,
+
+        @JsonProperty("external_ids")
+        val externalIds: ExternalIds? = null,
+
+        @JsonProperty("recommendations")
+        val recommendations: RecommendationResults? = null,
+
+        @JsonProperty("seasons")
+        val seasons: List<Seasons>? = arrayListOf()
+    )
 }
