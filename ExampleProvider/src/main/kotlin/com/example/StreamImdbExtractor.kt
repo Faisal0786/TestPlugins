@@ -75,6 +75,7 @@ object StreamImdbExtractor {
 
             val subtitles =
                 json.optJSONArray("default_subs")
+                    ?: dataObject.optJSONArray("default_subs")
 
             if (subtitles != null) {
 
