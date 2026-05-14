@@ -26,10 +26,10 @@ android {
 
 cloudstream {
 
-    description = "StreamIMDB Premium Provider"
+    description = "Multi language Movies and Tv shows provider"
 
     authors = listOf(
-        "Faisal0786"
+        "Faisal"
     )
 
     status = 1
