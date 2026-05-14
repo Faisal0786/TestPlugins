@@ -255,7 +255,7 @@ class StreamImdbProvider : MainAPI() {
 
                     episodes.add(
                         newEpisode(
-                            "${res.externalIds?.imdbId}|tv|$seasonNumber|$epNum"
+                            "${res.externalIds?.imdbId ?: return@forEach}|tv|$seasonNumber|$epNum"
                         ) {
 
                             this.name = ep.name
@@ -264,7 +264,7 @@ class StreamImdbProvider : MainAPI() {
                                 seasonNumber
 
                             this.episode =
-                                ep.episodeNumber
+                                epNum
 
                             this.posterUrl =
                                 getImageUrl(ep.stillPath)
@@ -321,7 +321,7 @@ class StreamImdbProvider : MainAPI() {
                 title,
                 url,
                 TvType.Movie,
-                "${res.externalIds?.imdbId}|movie"
+                "${res.externalIds?.imdbId ?: return null}|movie"
             ) {
 
                 this.posterUrl = poster
