@@ -354,13 +354,107 @@ class ExampleProvider : MainAPI() {
     }
 
     override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
 
-        return true
+    try {
+
+        val parts = data.split("|")
+
+        val imdbId = parts[0]
+        val type = parts[1]
+
+        val apiUrl =
+            if (type == "tv") {
+
+                val season = parts[2]
+                val episode = parts[3]
+
+                "https://streamdata.vaplayer.ru/api.php?imdb=$imdbId&type=tv&season=$season&episode=$episode"
+
+            } else {
+
+                "https://streamdata.vaplayer.ru/api.php?imdb=$imdbId&type=movie"
+            }
+
+        Log.d("StreamIMDB", "API URL = $apiUrl")
+
+        val response = app.get(
+            apiUrl,
+            headers = mapOf(
+                "Referer" to "https://brightpathsignals.com/",
+                "Origin" to "https://brightpathsignals.com/",
+                "User-Agent" to USER_AGENT
+            )
+        ).text
+
+        val json = JSONObject(response)
+
+        val dataObject = json.getJSONObject("data")
+
+        val streamUrls =
+            dataObject.getJSONArray("stream_urls")
+
+        for (i in 0 until streamUrls.length()) {
+
+            val streamUrl =
+                streamUrls.getString(i)
+
+            callback.invoke(
+                ExtractorLink(
+                    source = name,
+                    name = "$name Server ${i + 1}",
+                    url = streamUrl,
+                    referer = "https://brightpathsignals.com/",
+                    quality = Qualities.Unknown.value,
+                    isM3u8 = true
+                )
+            )
+        }
+
+        val subtitles =
+            json.optJSONArray("default_subs")
+
+        if (subtitles != null) {
+
+            for (i in 0 until subtitles.length()) {
+
+                val sub =
+                    subtitles.getJSONObject(i)
+
+                val subLang =
+                    sub.optString("lang")
+
+                val subUrl =
+                    sub.optString("url")
+
+                if (subUrl.isNotBlank()) {
+
+                    subtitleCallback.invoke(
+                        SubtitleFile(
+                            subLang,
+                            subUrl
+                        )
+                    )
+                }
+            }
+        }
+
+    } catch (e: Exception) {
+
+        Log.e(
+            "StreamIMDB",
+            "LOADLINKS ERROR = ${e.message}"
+        )
+
+        return false
+    }
+
+    return true
+}
     }
 
     private fun getImageUrl(
