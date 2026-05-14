@@ -619,7 +619,7 @@ class ExampleProvider : MainAPI() {
         val credits: Credits? = null,
 
         @JsonProperty("videos")
-        val TrailerResults? = null,
+        val videos: TrailerResults? = null,
 
         @JsonProperty("external_ids")
         val externalIds: ExternalIds? = null,
