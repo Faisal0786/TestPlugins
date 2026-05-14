@@ -6,7 +6,7 @@ import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
 import org.json.JSONObject
 
-object StreamIMDBExtractor {
+object StreamImdbExtractor {
 
     suspend fun loadLinks(
         name: String,
