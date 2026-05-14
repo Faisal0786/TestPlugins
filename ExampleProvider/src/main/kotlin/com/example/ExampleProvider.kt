@@ -10,6 +10,7 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
 import com.lagradost.cloudstream3.USER_AGENT
+import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import org.json.JSONObject
 
 class ExampleProvider : MainAPI() {
@@ -403,13 +404,13 @@ class ExampleProvider : MainAPI() {
                     streamUrls.getString(i)
 
                 callback.invoke(
-                    ExtractorLink(
+                    newExtractorLink(
                         source = name,
                         name = "$name Server ${i + 1}",
                         url = streamUrl,
                         referer = "https://brightpathsignals.com/",
                         quality = Qualities.Unknown.value,
-                        isM3u8 = true
+                        type = ExtractorLinkType.M3U8
                     )
                 )
             }
