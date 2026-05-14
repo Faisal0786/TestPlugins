@@ -13,7 +13,7 @@ import com.lagradost.cloudstream3.USER_AGENT
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import org.json.JSONObject
 
-class ExampleProvider : MainAPI() {
+class StreamImdbProvider : MainAPI() {
 
     override var name = "StreamIMDB"
     override var mainUrl = "https://streamimdb.ru"
