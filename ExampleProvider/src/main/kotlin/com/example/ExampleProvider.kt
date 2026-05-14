@@ -251,9 +251,11 @@ class ExampleProvider : MainAPI() {
 
                 seasonData.episodes?.forEach { ep ->
 
+                    val epNum = ep.episodeNumber ?: return@forEach
+
                     episodes.add(
                         newEpisode(
-                            "${res.externalIds?.imdbId}|tv|$seasonNumber|${ep.episodeNumber}"
+                            "${res.externalIds?.imdbId}|tv|$seasonNumber|$epNum"
                         ) {
 
                             this.name = ep.name
@@ -413,7 +415,7 @@ class ExampleProvider : MainAPI() {
                         headers = mapOf(
                             "Referer" to "https://brightpathsignals.com/"
                         )
-                
+
                         quality = Qualities.Unknown.value
                     }
                 )
