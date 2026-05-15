@@ -18,11 +18,13 @@ class StreamImdbProvider : MainAPI() {
         TvType.Anime
     )
 
-    
+    // Version update ke liye 'override' hata diya (Error fix)
+    var providerVersion = 241
+
     private val stealthHeaders = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Referer" to "$mainUrl/",
-        "Accept-Language" to "en-US,en;q=0.9"
+        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
     )
 
     override val mainPage = mainPageOf(
@@ -44,8 +46,13 @@ class StreamImdbProvider : MainAPI() {
             val href = fixUrlNull(card.selectFirst("a")?.attr("href")) ?: return@mapNotNull null
             val title = card.selectFirst(".cb-card-title")?.text()?.trim() ?: return@mapNotNull null
             
-            // Poster logic with data-src check
-            val poster = fixUrlNull(card.selectFirst("img")?.attr("data-src") ?: card.selectFirst("img")?.attr("src"))
+            // Poster Fix: data-src ko pehle check karo, fir src ko
+            val imgElement = card.selectFirst("img")
+            val poster = fixUrlNull(
+                imgElement?.attr("data-src")?.takeIf { it.isNotEmpty() } 
+                ?: imgElement?.attr("src")
+            )
+
             val meta = card.selectFirst(".cb-card-meta")?.text()?.lowercase()
             val isTv = meta?.contains("tv") == true || href.contains("/tv/")
 
@@ -63,7 +70,13 @@ class StreamImdbProvider : MainAPI() {
         return document.select("div.cb-card").mapNotNull { card ->
             val href = fixUrlNull(card.selectFirst("a")?.attr("href")) ?: return@mapNotNull null
             val title = card.selectFirst(".cb-card-title")?.text()?.trim() ?: return@mapNotNull null
-            val poster = fixUrlNull(card.selectFirst("img")?.attr("data-src") ?: card.selectFirst("img")?.attr("src"))
+            
+            val imgElement = card.selectFirst("img")
+            val poster = fixUrlNull(
+                imgElement?.attr("data-src")?.takeIf { it.isNotEmpty() } 
+                ?: imgElement?.attr("src")
+            )
+            
             val isTv = href.contains("/tv/")
 
             if (isTv) {
@@ -75,9 +88,9 @@ class StreamImdbProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url, headers = stealthHeaders).document
+        val res = app.get(url, headers = stealthHeaders)
+        val document = res.document
 
-        // Title: Logo alt text ya H1 text (dono HTML covered)
         val title = document.selectFirst(".cb-detail-title-logo")?.attr("alt")
                     ?: document.selectFirst(".cb-detail-title")?.text()
                     ?: document.selectFirst("h1")?.text()
@@ -85,14 +98,11 @@ class StreamImdbProvider : MainAPI() {
 
         val poster = document.selectFirst("meta[property=og:image]")?.attr("content")
         
-        // Backdrop from style attribute
         val backdrop = document.selectFirst(".cb-detail-banner-bg")?.attr("style")
             ?.substringAfter("background-image:url('")?.substringBefore("')")
 
-        // Plot: Exact ID from your HTML
         val plot = document.selectFirst("#cbPlot")?.text()?.trim()
 
-        // Meta data: Year and Tags
         val year = document.select(".cb-meta-plain").firstOrNull()?.text()?.toIntOrNull()
         val tags = document.select(".cb-meta-plain").map { it.text().trim() }
 
@@ -100,7 +110,6 @@ class StreamImdbProvider : MainAPI() {
 
         if (isTv) {
             val episodes = ArrayList<Episode>()
-            // Har season ke accordion se episodes nikalna
             document.select(".cb-season").forEach { seasonWrap ->
                 val seasonNum = seasonWrap.selectFirst(".cb-season-number")?.text()
                     ?.replace("Season", "", ignoreCase = true)?.trim()?.toIntOrNull() ?: 1
@@ -142,7 +151,6 @@ class StreamImdbProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        // Filhaal page content load karne par focus hai, links baad mein
         return false
     }
 }
