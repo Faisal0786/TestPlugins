@@ -299,6 +299,7 @@ class StreamImdbProvider : MainAPI() {
 ): Boolean {
 
     return StreamImdbExtractor.loadLinks(
+        name,
         data,
         subtitleCallback,
         callback
