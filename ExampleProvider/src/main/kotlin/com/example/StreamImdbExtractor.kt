@@ -20,19 +20,29 @@ object StreamImdbExtractor {
             val parts = data.split("|")
 
             val imdbId = parts[0]
-            val type = parts[1]
+            val tmdbId = parts[1]
+            val type = parts[2]
 
             val apiUrl =
                 if (type == "tv") {
 
-                    val season = parts[2]
-                    val episode = parts[3]
+                    val season = parts[3]
+                    val episode = parts[4]
 
-                    "https://streamdata.vaplayer.ru/api.php?imdb=$imdbId&type=tv&season=$season&episode=$episode"
+                    if (imdbId != "null") {
+                        "https://streamdata.vaplayer.ru/api.php?imdb=$imdbId&type=tv&season=$season&episode=$episode"
+                    } else {
+                        "https://streamdata.vaplayer.ru/api.php?tmdb=$tmdbId&type=tv&season=$season&episode=$episode"
+                    }
 
                 } else {
-
-                    "https://streamdata.vaplayer.ru/api.php?imdb=$imdbId&type=movie"
+                    
+                    // Movie block mein bhi same logic apply kar diya hai for safety
+                    if (imdbId != "null") {
+                        "https://streamdata.vaplayer.ru/api.php?imdb=$imdbId&type=movie"
+                    } else {
+                        "https://streamdata.vaplayer.ru/api.php?tmdb=$tmdbId&type=movie"
+                    }
                 }
 
             val response = app.get(
