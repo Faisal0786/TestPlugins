@@ -207,7 +207,7 @@ class StreamImdbProvider : MainAPI() {
                 ?.attr("content")
 
         val backdrop =
-            document.selectFirst("#cbBannerBg")
+            document.selectFirst(".cb-detail-banner-bg")
                 ?.attr("style")
                 ?.substringAfter("url('")
                 ?.substringBefore("')")
@@ -234,9 +234,6 @@ class StreamImdbProvider : MainAPI() {
                 ?.attr("src")
                 ?.substringAfter("/embed/")
                 ?.substringBefore("?")
-                ?.let {
-                    "https://www.youtube.com/watch?v=$it"
-                }
 
         val actors =
             document.select(".cb-cast-item-card")
@@ -257,6 +254,7 @@ class StreamImdbProvider : MainAPI() {
                         fixUrlNull(
                             it.selectFirst("img")
                                 ?.attr("data-src")
+                                ?.takeIf { img -> img.isNotBlank() }
                                 ?: it.selectFirst("img")
                                     ?.attr("src")
                         )
@@ -317,6 +315,7 @@ class StreamImdbProvider : MainAPI() {
                                 fixUrlNull(
                                     ep.selectFirst(".cb-episode-thumb img")
                                         ?.attr("data-src")
+                                        ?.takeIf { img -> img.isNotBlank() }
                                         ?: ep.selectFirst(".cb-episode-thumb img")
                                             ?.attr("src")
                                 )
@@ -365,7 +364,11 @@ class StreamImdbProvider : MainAPI() {
                 this.actors =
                     actors
 
-                addTrailer(trailer)
+                trailer?.let {
+                    addTrailer(
+                        "https://www.youtube.com/watch?v=$it"
+                    )
+                }
             }
 
         } else {
@@ -395,7 +398,11 @@ class StreamImdbProvider : MainAPI() {
                 this.actors =
                     actors
 
-                addTrailer(trailer)
+                trailer?.let {
+                    addTrailer(
+                        "https://www.youtube.com/watch?v=$it"
+                    )
+                }
             }
         }
     }
