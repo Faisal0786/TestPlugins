@@ -304,3 +304,4 @@ class StreamImdbProvider : MainAPI() {
         callback
     )
 }
+}
