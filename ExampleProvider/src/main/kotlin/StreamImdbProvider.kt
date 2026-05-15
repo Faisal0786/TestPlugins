@@ -18,10 +18,7 @@ class StreamImdbProvider : MainAPI() {
         TvType.Anime
     )
 
-    // Version update taaki app refresh ho jaye
-    override var version = 240
-
-    // Stealth Headers jo website bypass ke liye zaroori hain
+    
     private val stealthHeaders = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Referer" to "$mainUrl/",
