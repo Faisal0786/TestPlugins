@@ -1,4 +1,4 @@
-Package com.example
+package com.example
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.app
@@ -253,8 +253,7 @@ class StreamImdbProvider : MainAPI() {
                 this.tags =
                     tags
 
-                this.trailerUrl =
-                    trailer
+                
 
                 this.actors =
                     actors
@@ -284,8 +283,7 @@ class StreamImdbProvider : MainAPI() {
                 this.tags =
                     tags
 
-                this.trailerUrl =
-                    trailer
+                
 
                 this.actors =
                     actors
