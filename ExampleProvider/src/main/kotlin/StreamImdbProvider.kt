@@ -18,9 +18,6 @@ class StreamImdbProvider : MainAPI() {
         TvType.Anime
     )
 
-    // Version update ke liye 'override' hata diya (Error fix)
-    var providerVersion = 241
-
     private val stealthHeaders = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Referer" to "$mainUrl/",
@@ -46,7 +43,6 @@ class StreamImdbProvider : MainAPI() {
             val href = fixUrlNull(card.selectFirst("a")?.attr("href")) ?: return@mapNotNull null
             val title = card.selectFirst(".cb-card-title")?.text()?.trim() ?: return@mapNotNull null
             
-            // Poster Fix: data-src ko pehle check karo, fir src ko
             val imgElement = card.selectFirst("img")
             val poster = fixUrlNull(
                 imgElement?.attr("data-src")?.takeIf { it.isNotEmpty() } 
@@ -98,13 +94,25 @@ class StreamImdbProvider : MainAPI() {
 
         val poster = document.selectFirst("meta[property=og:image]")?.attr("content")
         
+        // 1. Backdrop Fix: Background image handle karne ke liye
         val backdrop = document.selectFirst(".cb-detail-banner-bg")?.attr("style")
             ?.substringAfter("background-image:url('")?.substringBefore("')")
 
         val plot = document.selectFirst("#cbPlot")?.text()?.trim()
-
         val year = document.select(".cb-meta-plain").firstOrNull()?.text()?.toIntOrNull()
         val tags = document.select(".cb-meta-plain").map { it.text().trim() }
+
+        // 2. Trailer Fix: YouTube iframe se link nikalna
+        val trailer = document.selectFirst("#cbBgTrailer")?.attr("src")
+            ?.let { "https://www.youtube.com/watch?v=" + it.substringAfter("/embed/").substringBefore("?") }
+
+        // 3. Cast Fix: Actors ka naam aur image
+        val actors = document.select(".cb-cast-item").mapNotNull { 
+            val name = it.selectFirst(".cb-cast-name")?.text() ?: return@mapNotNull null
+            val role = it.selectFirst(".cb-cast-role")?.text()
+            val image = it.selectFirst("img")?.attr("data-src") ?: it.selectFirst("img")?.attr("src")
+            ActorData(Actor(name, image), role)
+        }
 
         val isTv = url.contains("/tv/") || document.select(".cb-season").isNotEmpty()
 
@@ -118,11 +126,15 @@ class StreamImdbProvider : MainAPI() {
                     val epHref = fixUrlNull(ep.attr("href")) ?: return@forEach
                     val epTitle = ep.selectFirst(".cb-episode-title")?.text()?.trim()
                     val epNum = ep.selectFirst(".cb-episode-num")?.text()?.toIntOrNull()
+                    
+                    // 4. Episode Thumbnail Fix
+                    val epThumb = ep.selectFirst("img")?.attr("data-src") ?: ep.selectFirst("img")?.attr("src")
 
                     episodes.add(newEpisode(epHref) {
                         this.name = epTitle
                         this.season = seasonNum
                         this.episode = epNum
+                        this.posterUrl = epThumb
                     })
                 }
             }
@@ -133,6 +145,8 @@ class StreamImdbProvider : MainAPI() {
                 this.plot = plot
                 this.year = year
                 this.tags = tags
+                this.actors = actors
+                this.trailerUrl = trailer
             }
         } else {
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
@@ -141,6 +155,8 @@ class StreamImdbProvider : MainAPI() {
                 this.plot = plot
                 this.year = year
                 this.tags = tags
+                this.actors = actors
+                this.trailerUrl = trailer
             }
         }
     }
