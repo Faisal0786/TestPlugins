@@ -153,10 +153,11 @@ class StreamImdbProvider : MainAPI() {
                     )
 
                 ActorData(
-                    Actor(
+                    actor = Actor(
                         actorName,
                         actorImage
-                    )
+                    ),
+                    role = null
                 )
             }
 
@@ -301,3 +302,4 @@ class StreamImdbProvider : MainAPI() {
         return false
     }
 }
+```</ActorData></ActorData>
