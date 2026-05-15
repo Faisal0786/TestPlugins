@@ -1,7 +1,6 @@
 package com.example
 
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
 
@@ -20,6 +19,8 @@ class StreamImdbProvider : MainAPI() {
         TvType.Anime
     )
 
+    var providerVersion = 242
+
     private val stealthHeaders = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Referer" to "$mainUrl/",
@@ -27,96 +28,179 @@ class StreamImdbProvider : MainAPI() {
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/" to "Home",
-        "$mainUrl/movies" to "Movies",
-        "$mainUrl/tv-shows" to "TV Shows",
-        "$mainUrl/most-viewed" to "Most Viewed",
-        "$mainUrl/most-viewed-tv" to "Top TV"
+        "top10" to "Top 10 Today",
+        "trending" to "Trending Tv Shows",
+        "popular" to "Popular Now",
+        "episodes" to "Latest Episodes",
+        "latesttv" to "Latest TV Shows",
+        "toprated" to "Top Rated"
     )
+
+    private fun toSearchResult(
+        card: org.jsoup.nodes.Element
+    ): SearchResponse? {
+
+        val href =
+            fixUrlNull(
+                card.selectFirst("a")
+                    ?.attr("href")
+            ) ?: return null
+
+        val title =
+            card.selectFirst(".cb-card-title")
+                ?.text()
+                ?.trim()
+                ?: return null
+
+        val poster =
+            fixUrlNull(
+                card.selectFirst("img")
+                    ?.attr("data-src")
+                    ?.takeIf { it.isNotBlank() }
+                    ?: card.selectFirst("img")
+                        ?.attr("src")
+            )
+
+        val isTv =
+            href.contains("/tv/")
+
+        return if (isTv) {
+
+            newTvSeriesSearchResponse(
+                title,
+                href,
+                TvType.TvSeries
+            ) {
+                this.posterUrl = poster
+            }
+
+        } else {
+
+            newMovieSearchResponse(
+                title,
+                href,
+                TvType.Movie
+            ) {
+                this.posterUrl = poster
+            }
+        }
+    }
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
 
-        val url =
-            if (page == 1) request.data
-            else "${request.data}?page=$page"
-
         val document =
             app.get(
-                url,
+                mainUrl,
                 headers = stealthHeaders
             ).document
 
-        val home =
-            document.select("div.cb-card")
-                .mapNotNull { card ->
+        val items = when (request.data) {
 
-                    val href =
-                        fixUrlNull(
-                            card.selectFirst("a")
-                                ?.attr("href")
-                        ) ?: return@mapNotNull null
+            "top10" -> {
 
-                    val title =
-                        card.selectFirst(".cb-card-title")
-                            ?.text()
-                            ?.trim()
-                            ?: return@mapNotNull null
+                document.select(".cb-top10-item")
+                    .mapNotNull { card ->
 
-                    val imgElement =
-                        card.selectFirst("img")
+                        val href =
+                            fixUrlNull(card.attr("href"))
+                                ?: return@mapNotNull null
 
-                    val poster =
-                        fixUrlNull(
-                            imgElement?.attr("data-src")
-                                ?.takeIf { it.isNotEmpty() }
-                                ?: imgElement?.attr("src")
-                        )
+                        val title =
+                            card.attr("aria-label")
+                                .substringAfter("-")
+                                .trim()
 
-                    val meta =
-                        card.selectFirst(".cb-card-meta")
-                            ?.text()
-                            ?.lowercase()
+                        val poster =
+                            fixUrlNull(
+                                card.selectFirst("img")
+                                    ?.attr("src")
+                            )
 
-                    val isTv =
-                        meta?.contains("tv") == true
-                                || href.contains("/tv/")
+                        val isTv =
+                            href.contains("/tv/")
 
-                    if (isTv) {
+                        if (isTv) {
 
-                        newTvSeriesSearchResponse(
-                            title,
-                            href,
-                            TvType.TvSeries
-                        ) {
-                            this.posterUrl = poster
-                        }
+                            newTvSeriesSearchResponse(
+                                title,
+                                href,
+                                TvType.TvSeries
+                            ) {
+                                this.posterUrl = poster
+                            }
 
-                    } else {
+                        } else {
 
-                        newMovieSearchResponse(
-                            title,
-                            href,
-                            TvType.Movie
-                        ) {
-                            this.posterUrl = poster
+                            newMovieSearchResponse(
+                                title,
+                                href,
+                                TvType.Movie
+                            ) {
+                                this.posterUrl = poster
+                            }
                         }
                     }
+            }
+
+            "trending" -> {
+
+                document.select(
+                    "#cb-trending-series .cb-card"
+                ).mapNotNull {
+                    toSearchResult(it)
                 }
+            }
+
+            "popular" -> {
+
+                document.select(".cb-row-section")
+                    .eq(1)
+                    .select(".cb-card")
+                    .mapNotNull {
+                        toSearchResult(it)
+                    }
+            }
+
+            "episodes" -> {
+
+                document.select(".cb-row-section")
+                    .eq(2)
+                    .select(".cb-card")
+                    .mapNotNull {
+                        toSearchResult(it)
+                    }
+            }
+
+            "latesttv" -> {
+
+                document.select(".cb-row-section")
+                    .eq(3)
+                    .select(".cb-card")
+                    .mapNotNull {
+                        toSearchResult(it)
+                    }
+            }
+
+            "toprated" -> {
+
+                document.select(".cb-row-section")
+                    .eq(4)
+                    .select(".cb-card")
+                    .mapNotNull {
+                        toSearchResult(it)
+                    }
+            }
+
+            else -> emptyList()
+        }
 
         return newHomePageResponse(
             request.name,
-            home
+            items
         )
-    }
-
-    override suspend fun quickSearch(
-        query: String
-    ): List<SearchResponse>? {
-
-        return search(query)
     }
 
     override suspend fun search(
@@ -130,53 +214,8 @@ class StreamImdbProvider : MainAPI() {
             ).document
 
         return document.select("div.cb-card")
-            .mapNotNull { card ->
-
-                val href =
-                    fixUrlNull(
-                        card.selectFirst("a")
-                            ?.attr("href")
-                    ) ?: return@mapNotNull null
-
-                val title =
-                    card.selectFirst(".cb-card-title")
-                        ?.text()
-                        ?.trim()
-                        ?: return@mapNotNull null
-
-                val imgElement =
-                    card.selectFirst("img")
-
-                val poster =
-                    fixUrlNull(
-                        imgElement?.attr("data-src")
-                            ?.takeIf { it.isNotEmpty() }
-                            ?: imgElement?.attr("src")
-                    )
-
-                val isTv =
-                    href.contains("/tv/")
-
-                if (isTv) {
-
-                    newTvSeriesSearchResponse(
-                        title,
-                        href,
-                        TvType.TvSeries
-                    ) {
-                        this.posterUrl = poster
-                    }
-
-                } else {
-
-                    newMovieSearchResponse(
-                        title,
-                        href,
-                        TvType.Movie
-                    ) {
-                        this.posterUrl = poster
-                    }
-                }
+            .mapNotNull {
+                toSearchResult(it)
             }
     }
 
@@ -184,14 +223,11 @@ class StreamImdbProvider : MainAPI() {
         url: String
     ): LoadResponse? {
 
-        val res =
+        val document =
             app.get(
                 url,
                 headers = stealthHeaders
-            )
-
-        val document =
-            res.document
+            ).document
 
         val title =
             document.selectFirst(".cb-detail-title-logo")
@@ -207,7 +243,7 @@ class StreamImdbProvider : MainAPI() {
                 ?.attr("content")
 
         val backdrop =
-            document.selectFirst(".cb-detail-banner-bg")
+            document.selectFirst("#cbBannerBg")
                 ?.attr("style")
                 ?.substringAfter("url('")
                 ?.substringBefore("')")
@@ -216,6 +252,20 @@ class StreamImdbProvider : MainAPI() {
             document.selectFirst("#cbPlot")
                 ?.text()
                 ?.trim()
+
+        // IMPORTANT FOR EXTRACTOR
+        val imdbId =
+            Regex("""tt\d+""")
+                .find(document.html())
+                ?.value
+                ?: "null"
+
+        val tmdbId =
+            document.html()
+                .substringAfter("tmdb:")
+                .substringBefore(",")
+                .filter { it.isDigit() }
+                .ifBlank { "null" }
 
         val year =
             Regex("""(19|20)\d{2}""")
@@ -228,12 +278,6 @@ class StreamImdbProvider : MainAPI() {
                 .map {
                     it.text().trim()
                 }
-
-        val trailer =
-            document.selectFirst("#cbBgTrailer")
-                ?.attr("src")
-                ?.substringAfter("/embed/")
-                ?.substringBefore("?")
 
         val actors =
             document.select(".cb-cast-item-card")
@@ -254,7 +298,6 @@ class StreamImdbProvider : MainAPI() {
                         fixUrlNull(
                             it.selectFirst("img")
                                 ?.attr("data-src")
-                                ?.takeIf { img -> img.isNotBlank() }
                                 ?: it.selectFirst("img")
                                     ?.attr("src")
                         )
@@ -278,65 +321,58 @@ class StreamImdbProvider : MainAPI() {
             val episodes =
                 ArrayList<Episode>()
 
-            document.select(".cb-season")
-                .forEach { seasonWrap ->
+            document.select(".cb-episode-item")
+                .forEach { ep ->
+
+                    val epHref =
+                        fixUrlNull(
+                            ep.attr("href")
+                        ) ?: return@forEach
+
+                    val epTitle =
+                        ep.selectFirst(".cb-episode-title")
+                            ?.text()
+                            ?.trim()
+
+                    val epNum =
+                        ep.selectFirst(".cb-episode-num")
+                            ?.text()
+                            ?.toIntOrNull()
 
                     val seasonNum =
-                        seasonWrap.selectFirst(".cb-season-number")
-                            ?.text()
-                            ?.replace(
-                                "Season",
-                                "",
-                                ignoreCase = true
-                            )
-                            ?.trim()
+                        Regex("""/season/(\d+)""")
+                            .find(epHref)
+                            ?.groupValues
+                            ?.getOrNull(1)
                             ?.toIntOrNull()
                             ?: 1
 
-                    seasonWrap.select(".cb-episode-item")
-                        .forEach { ep ->
+                    val epThumb =
+                        fixUrlNull(
+                            ep.selectFirst(".cb-episode-thumb img")
+                                ?.attr("data-src")
+                                ?: ep.selectFirst(".cb-episode-thumb img")
+                                    ?.attr("src")
+                        )
 
-                            val epHref =
-                                fixUrlNull(
-                                    ep.attr("href")
-                                ) ?: return@forEach
+                    episodes.add(
+                        newEpisode(
+                            "$imdbId|$tmdbId|tv|$seasonNum|$epNum"
+                        ) {
 
-                            val epTitle =
-                                ep.selectFirst(".cb-episode-title")
-                                    ?.text()
-                                    ?.trim()
+                            this.name =
+                                epTitle
 
-                            val epNum =
-                                ep.selectFirst(".cb-episode-num")
-                                    ?.text()
-                                    ?.toIntOrNull()
+                            this.season =
+                                seasonNum
 
-                            val epThumb =
-                                fixUrlNull(
-                                    ep.selectFirst(".cb-episode-thumb img")
-                                        ?.attr("data-src")
-                                        ?.takeIf { img -> img.isNotBlank() }
-                                        ?: ep.selectFirst(".cb-episode-thumb img")
-                                            ?.attr("src")
-                                )
+                            this.episode =
+                                epNum
 
-                            episodes.add(
-                                newEpisode(epHref) {
-
-                                    this.name =
-                                        epTitle
-
-                                    this.season =
-                                        seasonNum
-
-                                    this.episode =
-                                        epNum
-
-                                    this.posterUrl =
-                                        epThumb
-                                }
-                            )
+                            this.posterUrl =
+                                epThumb
                         }
+                    )
                 }
 
             return newTvSeriesLoadResponse(
@@ -363,12 +399,6 @@ class StreamImdbProvider : MainAPI() {
 
                 this.actors =
                     actors
-
-                trailer?.let {
-                    addTrailer(
-                        "https://www.youtube.com/watch?v=$it"
-                    )
-                }
             }
 
         } else {
@@ -377,7 +407,7 @@ class StreamImdbProvider : MainAPI() {
                 title,
                 url,
                 TvType.Movie,
-                url
+                "$imdbId|$tmdbId|movie"
             ) {
 
                 this.posterUrl =
@@ -397,12 +427,6 @@ class StreamImdbProvider : MainAPI() {
 
                 this.actors =
                     actors
-
-                trailer?.let {
-                    addTrailer(
-                        "https://www.youtube.com/watch?v=$it"
-                    )
-                }
             }
         }
     }
