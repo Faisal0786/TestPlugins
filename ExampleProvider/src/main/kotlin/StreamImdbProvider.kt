@@ -1,17 +1,8 @@
 package com.example
 
-import android.util.Log
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
-import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
-import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import com.lagradost.cloudstream3.utils.AppUtils.toJson
-import com.lagradost.cloudstream3.USER_AGENT
-import com.lagradost.cloudstream3.utils.ExtractorLinkType
-import org.json.JSONObject
 
 class StreamImdbProvider : MainAPI() {
 
@@ -29,41 +20,12 @@ class StreamImdbProvider : MainAPI() {
         TvType.Anime
     )
 
-    private val apiUrl = "https://api.themoviedb.org/3"
-
-    companion object {
-        private const val apiKey = "fceea78d0d9713c879f0cfeb0dbfb40b"
-    }
-
     override val mainPage = mainPageOf(
-
-        "trending/all/day?api_key=$apiKey" to "Trending",
-
-        "movie/popular?api_key=$apiKey" to "Popular Movies",
-
-        "tv/popular?api_key=$apiKey" to "Popular TV",
-
-        "movie/top_rated?api_key=$apiKey" to "Top Rated Movies",
-
-        "tv/top_rated?api_key=$apiKey" to "Top Rated TV",
-
-        "movie/now_playing?api_key=$apiKey" to "Now Playing",
-
-        "movie/upcoming?api_key=$apiKey" to "Upcoming Movies",
-
-        "discover/movie?api_key=$apiKey&with_genres=28" to "Action Movies",
-
-        "discover/movie?api_key=$apiKey&with_genres=35" to "Comedy Movies",
-
-        "discover/movie?api_key=$apiKey&with_genres=27" to "Horror Movies",
-
-        "discover/movie?api_key=$apiKey&with_genres=878" to "Sci-Fi Movies",
-
-        "discover/tv?api_key=$apiKey&with_genres=16&with_origin_country=JP" to "Anime",
-
-        "discover/movie?api_key=$apiKey&with_watch_providers=8&watch_region=US" to "Netflix",
-
-        "discover/movie?api_key=$apiKey&with_watch_providers=9&watch_region=US" to "Amazon Prime"
+        "$mainUrl/" to "Home",
+        "$mainUrl/movies" to "Movies",
+        "$mainUrl/tv-shows" to "TV Shows",
+        "$mainUrl/most-viewed" to "Most Viewed",
+        "$mainUrl/most-viewed-tv" to "Top TV"
     )
 
     override suspend fun getMainPage(
@@ -71,65 +33,69 @@ class StreamImdbProvider : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
 
-        val home = app.get(
-            "$apiUrl/${request.data}&page=$page"
-        ).parsedSafe<Results>()?.results?.mapNotNull {
+        val url =
+            if (page == 1)
+                request.data
+            else
+                "${request.data}?page=$page"
 
-            it.toSearchResponse()
+        val document =
+            app.get(url).document
 
-        } ?: emptyList()
+        val home = document.select("div.cb-card")
+            .mapNotNull { card ->
+
+                val href = fixUrlNull(
+                    card.selectFirst("a")
+                        ?.attr("href")
+                ) ?: return@mapNotNull null
+
+                val title =
+                    card.selectFirst(".cb-card-title")
+                        ?.text()
+                        ?.trim()
+                        ?: return@mapNotNull null
+
+                val poster =
+                    fixUrlNull(
+                        card.selectFirst("img")
+                            ?.attr("src")
+                    )
+
+                val meta =
+                    card.selectFirst(".cb-card-meta")
+                        ?.text()
+                        ?.lowercase()
+
+                val isTv =
+                    meta?.contains("tv") == true
+
+                if (isTv) {
+
+                    newTvSeriesSearchResponse(
+                        title,
+                        href,
+                        TvType.TvSeries
+                    ) {
+                        this.posterUrl = poster
+                    }
+
+                } else {
+
+                    newMovieSearchResponse(
+                        title,
+                        href,
+                        TvType.Movie
+                    ) {
+                        this.posterUrl = poster
+                    }
+                }
+            }
 
         return newHomePageResponse(
             request.name,
             home
         )
-    }
-
-    private fun Media.toSearchResponse(): SearchResponse? {
-
-        val mediaType =
-            mediaType ?: if (title != null) "movie" else "tv"
-
-        val tvType =
-            if (mediaType == "tv") TvType.TvSeries
-            else TvType.Movie
-
-        return if (tvType == TvType.TvSeries) {
-
-            newTvSeriesSearchResponse(
-                name ?: title ?: return null,
-                LinkData(
-                    id,
-                    mediaType
-                ).toJson(),
-                tvType
-            ) {
-
-                this.posterUrl =
-                    getImageUrl(posterPath)
-
-                this.score =
-                    Score.from10(voteAverage)
-            }
-
-        } else {
-
-            newMovieSearchResponse(
-                title ?: name ?: return null,
-                LinkData(
-                    id,
-                    mediaType
-                ).toJson(),
-                tvType
-            ) {
-
-                this.posterUrl =
-                    getImageUrl(posterPath)
-
-                this.score =
-                    Score.from10(voteAverage)
-            }
-        }
     }
 
     override suspend fun quickSearch(
@@ -143,141 +109,146 @@ class StreamImdbProvider : MainAPI() {
         query: String
     ): List<SearchResponse> {
 
-        return app.get(
-            "$apiUrl/search/multi?api_key=$apiKey&query=$query"
-        ).parsedSafe<Results>()?.results?.mapNotNull {
+        val document = app.get(
+            "$mainUrl/search?q=$query"
+        ).document
 
-            if (it.mediaType == "person")
-                return@mapNotNull null
+        return document.select("div.cb-card")
+            .mapNotNull { card ->
 
-            it.toSearchResponse()
+                val href = fixUrlNull(
+                    card.selectFirst("a")
+                        ?.attr("href")
+                ) ?: return@mapNotNull null
 
-        } ?: emptyList()
+                val title =
+                    card.selectFirst(".cb-card-title")
+                        ?.text()
+                        ?.trim()
+                        ?: return@mapNotNull null
+
+                val poster =
+                    fixUrlNull(
+                        card.selectFirst("img")
+                            ?.attr("src")
+                    )
+
+                val meta =
+                    card.selectFirst(".cb-card-meta")
+                        ?.text()
+                        ?.lowercase()
+
+                val isTv =
+                    meta?.contains("tv") == true
+
+                if (isTv) {
+
+                    newTvSeriesSearchResponse(
+                        title,
+                        href,
+                        TvType.TvSeries
+                    ) {
+                        this.posterUrl = poster
+                    }
+
+                } else {
+
+                    newMovieSearchResponse(
+                        title,
+                        href,
+                        TvType.Movie
+                    ) {
+                        this.posterUrl = poster
+                    }
+                }
+            }
     }
 
     override suspend fun load(
         url: String
     ): LoadResponse? {
 
-        val data =
-            parseJson<LinkData>(url)
-
-        val type =
-            if (data.type == "tv")
-                TvType.TvSeries
-            else
-                TvType.Movie
-
-        val append =
-            "credits,videos,external_ids,recommendations"
-
-        val loadUrl =
-            if (type == TvType.Movie) {
-
-                "$apiUrl/movie/${data.id}?api_key=$apiKey&append_to_response=$append"
-
-            } else {
-
-                "$apiUrl/tv/${data.id}?api_key=$apiKey&append_to_response=$append"
-            }
-
-        val res = app.get(loadUrl)
-            .parsedSafe<MediaDetail>()
-            ?: return null
+        val document =
+            app.get(url).document
 
         val title =
-            res.title ?: res.name ?: return null
+            document.selectFirst(".cb-detail-title")
+                ?.text()
+                ?.trim()
+                ?: return null
 
         val poster =
-            getImageUrl(res.posterPath)
+            fixUrlNull(
+                document.selectFirst(".cb-detail-poster img")
+                    ?.attr("src")
+            )
 
         val backdrop =
-            getImageUrl(res.backdropPath)
+            document.selectFirst(".cb-detail-backdrop")
+                ?.attr("style")
+                ?.substringAfter("url('")
+                ?.substringBefore("')")
+
+        val plot =
+            document.selectFirst(".cb-detail-overview")
+                ?.text()
+                ?.trim()
 
         val year =
-            (res.releaseDate ?: res.firstAirDate)
-                ?.substringBefore("-")
+            Regex("""\b(19|20)\d{2}\b""")
+                .find(
+                    document.selectFirst(".cb-detail-meta")
+                        ?.text()
+                        ?: ""
+                )
+                ?.value
                 ?.toIntOrNull()
 
-        val genres =
-            res.genres?.mapNotNull {
-                it.name
-            }
-
-        val actors =
-            res.credits?.cast?.mapNotNull {
-
-                ActorData(
-                    Actor(
-                        it.name ?: return@mapNotNull null,
-                        getImageUrl(it.profilePath)
-                    ),
-                    roleString = it.character
-                )
-
-            } ?: emptyList()
-
-        val recommendations =
-            res.recommendations?.results?.mapNotNull {
-                it.toSearchResponse()
-            }
-
-        val trailers =
-            res.videos?.results?.mapNotNull {
-
-                it.key?.let { key ->
-                    "https://www.youtube.com/watch?v=$key"
+        val tags =
+            document.select("a[href*='/category/']")
+                .map {
+                    it.text().trim()
                 }
 
-            } ?: emptyList()
+        val isTv =
+            url.contains("/tv/")
 
-        if (type == TvType.TvSeries) {
+        if (isTv) {
 
             val episodes =
-                mutableListOf<Episode>()
+                document.select(".cb-episode-item")
+                    .mapNotNull { ep ->
 
-            res.seasons?.forEach { season ->
+                        val epHref = fixUrlNull(
+                            ep.attr("href")
+                        ) ?: return@mapNotNull null
 
-                val seasonNumber =
-                    season.seasonNumber ?: return@forEach
+                        val epTitle =
+                            ep.selectFirst(".cb-episode-title")
+                                ?.text()
+                                ?.trim()
 
-                if (seasonNumber == 0)
-                    return@forEach
+                        val epNum =
+                            ep.selectFirst(".cb-episode-num")
+                                ?.text()
+                                ?.toIntOrNull()
 
-                val seasonData = app.get(
-                    "$apiUrl/tv/${data.id}/season/$seasonNumber?api_key=$apiKey"
-                ).parsedSafe<SeasonDetail>()
-                    ?: return@forEach
+                        val season =
+                            Regex("/season/(\\d+)/")
+                                .find(epHref)
+                                ?.groupValues
+                                ?.getOrNull(1)
+                                ?.toIntOrNull()
 
-                seasonData.episodes?.forEach { ep ->
+                        newEpisode(epHref) {
 
-                    val epNum = ep.episodeNumber ?: return@forEach
+                            this.name = epTitle
 
-                    episodes.add(
-                        newEpisode(
-                            "${res.externalIds?.imdbId ?: return@forEach}|tv|$seasonNumber|$epNum"
-                        ) {
+                            this.season = season
 
-                            this.name = ep.name
-
-                            this.season =
-                                seasonNumber
-
-                            this.episode =
-                                epNum
-
-                            this.posterUrl =
-                                getImageUrl(ep.stillPath)
-
-                            this.description =
-                                ep.overview
-
-                            this.score =
-                                Score.from10(ep.voteAverage)
+                            this.episode = epNum
                         }
-                    )
-                }
-            }
+                    }
 
             return newTvSeriesLoadResponse(
                 title,
@@ -291,28 +262,11 @@ class StreamImdbProvider : MainAPI() {
                 this.backgroundPosterUrl =
                     backdrop
 
+                this.plot = plot
+
                 this.year = year
 
-                this.plot =
-                    res.overview
-
-                this.tags =
-                    genres
-
-                this.actors =
-                    actors
-
-                this.recommendations =
-                    recommendations
-
-                this.score =
-                    Score.from10(res.voteAverage)
-
-                addTrailer(trailers)
-
-                addImdbId(
-                    res.externalIds?.imdbId
-                )
+                this.tags = tags
             }
 
         } else {
@@ -321,7 +275,7 @@ class StreamImdbProvider : MainAPI() {
                 title,
                 url,
                 TvType.Movie,
-                "${res.externalIds?.imdbId ?: return null}|movie"
+                url
             ) {
 
                 this.posterUrl = poster
@@ -329,28 +283,11 @@ class StreamImdbProvider : MainAPI() {
                 this.backgroundPosterUrl =
                     backdrop
 
+                this.plot = plot
+
                 this.year = year
 
-                this.plot =
-                    res.overview
-
-                this.tags =
-                    genres
-
-                this.actors =
-                    actors
-
-                this.recommendations =
-                    recommendations
-
-                this.score =
-                    Score.from10(res.voteAverage)
-
-                addTrailer(trailers)
-
-                addImdbId(
-                    res.externalIds?.imdbId
-                )
+                this.tags = tags
             }
         }
     }
@@ -369,175 +306,4 @@ class StreamImdbProvider : MainAPI() {
             callback
         )
     }
-
-    private fun getImageUrl(
-        path: String?
-    ): String? {
-
-        if (path.isNullOrBlank())
-            return null
-
-        return "https://image.tmdb.org/t/p/w500$path"
-    }
-
-    data class LinkData(
-        val id: Int? = null,
-        val type: String? = null
-    )
-
-    data class EpisodeData(
-        val id: Int? = null,
-        val season: Int? = null,
-        val episode: Int? = null
-    )
-
-    data class Results(
-
-        @JsonProperty("results")
-        val results: List<Media>? = arrayListOf()
-    )
-
-    data class Media(
-
-        @JsonProperty("id")
-        val id: Int? = null,
-
-        @JsonProperty("title")
-        val title: String? = null,
-
-        @JsonProperty("name")
-        val name: String? = null,
-
-        @JsonProperty("media_type")
-        val mediaType: String? = null,
-
-        @JsonProperty("poster_path")
-        val posterPath: String? = null,
-
-        @JsonProperty("vote_average")
-        val voteAverage: Double? = null
-    )
-
-    data class Genres(
-
-        @JsonProperty("name")
-        val name: String? = null
-    )
-
-    data class Cast(
-
-        @JsonProperty("name")
-        val name: String? = null,
-
-        @JsonProperty("character")
-        val character: String? = null,
-
-        @JsonProperty("profile_path")
-        val profilePath: String? = null
-    )
-
-    data class Credits(
-
-        @JsonProperty("cast")
-        val cast: List<Cast>? = arrayListOf()
-    )
-
-    data class Trailer(
-
-        @JsonProperty("key")
-        val key: String? = null
-    )
-
-    data class TrailerResults(
-
-        @JsonProperty("results")
-        val results: List<Trailer>? = arrayListOf()
-    )
-
-    data class ExternalIds(
-
-        @JsonProperty("imdb_id")
-        val imdbId: String? = null
-    )
-
-    data class Seasons(
-
-        @JsonProperty("season_number")
-        val seasonNumber: Int? = null
-    )
-
-    data class EpisodeItem(
-
-        @JsonProperty("name")
-        val name: String? = null,
-
-        @JsonProperty("overview")
-        val overview: String? = null,
-
-        @JsonProperty("episode_number")
-        val episodeNumber: Int? = null,
-
-        @JsonProperty("still_path")
-        val stillPath: String? = null,
-
-        @JsonProperty("vote_average")
-        val voteAverage: Double? = null
-    )
-
-    data class SeasonDetail(
-
-        @JsonProperty("episodes")
-        val episodes: List<EpisodeItem>? = arrayListOf()
-    )
-
-    data class RecommendationResults(
-
-        @JsonProperty("results")
-        val results: List<Media>? = arrayListOf()
-    )
-
-    data class MediaDetail(
-
-        @JsonProperty("title")
-        val title: String? = null,
-
-        @JsonProperty("name")
-        val name: String? = null,
-
-        @JsonProperty("overview")
-        val overview: String? = null,
-
-        @JsonProperty("poster_path")
-        val posterPath: String? = null,
-
-        @JsonProperty("backdrop_path")
-        val backdropPath: String? = null,
-
-        @JsonProperty("release_date")
-        val releaseDate: String? = null,
-
-        @JsonProperty("first_air_date")
-        val firstAirDate: String? = null,
-
-        @JsonProperty("vote_average")
-        val voteAverage: Double? = null,
-
-        @JsonProperty("genres")
-        val genres: List<Genres>? = arrayListOf(),
-
-        @JsonProperty("credits")
-        val credits: Credits? = null,
-
-        @JsonProperty("videos")
-        val videos: TrailerResults? = null,
-
-        @JsonProperty("external_ids")
-        val externalIds: ExternalIds? = null,
-
-        @JsonProperty("recommendations")
-        val recommendations: RecommendationResults? = null,
-
-        @JsonProperty("seasons")
-        val seasons: List<Seasons>? = arrayListOf()
-    )
 }
