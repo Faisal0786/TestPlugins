@@ -292,12 +292,15 @@ class StreamImdbProvider : MainAPI() {
     }
 
     override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        return false
-    }
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
+
+    return StreamImdbExtractor.loadLinks(
+        data,
+        subtitleCallback,
+        callback
+    )
 }
-```</ActorData></ActorData>
