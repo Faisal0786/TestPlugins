@@ -63,7 +63,7 @@ object StreamImdbExtractor {
                 val streamUrl = streamUrls.getString(i)
 
                 callback.invoke(
-                    ExtractorLink(
+                    newExtractorLink(
                         source = name,
                         name = "$name Server ${i + 1}",
                         url = streamUrl,
