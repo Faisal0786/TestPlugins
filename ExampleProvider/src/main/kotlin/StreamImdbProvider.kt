@@ -309,7 +309,7 @@ class StreamImdbProvider : MainAPI() {
         ?.trim()
 
 val tmdbId =
-    Regex("""__cbCwMeta\s*=\s*\{.*?"id":"(\d+)"""")
+    Regex(""""id":"(\d+)"""")
         .find(document.html())
         ?.groupValues
         ?.getOrNull(1)
@@ -436,9 +436,14 @@ val imdbId =
                                     ?.trim()
 
                             val epNum =
-                                ep.selectFirst(".cb-episode-num")
-                                    ?.text()
-                                    ?.toIntOrNull()
+    Regex("""\d+""")
+        .find(
+            ep.selectFirst(".cb-episode-num")
+                ?.text()
+                ?: ""
+        )
+        ?.value
+        ?.toIntOrNull()
 
                             val epThumb =
                                 fixUrlNull(
