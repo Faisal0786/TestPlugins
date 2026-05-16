@@ -36,8 +36,7 @@ object StreamImdbExtractor {
                     }
 
                 } else {
-                    
-                    // Movie block mein bhi same logic apply kar diya hai for safety
+
                     if (imdbId != "null") {
                         "https://streamdata.vaplayer.ru/api.php?imdb=$imdbId&type=movie"
                     } else {
@@ -55,28 +54,26 @@ object StreamImdbExtractor {
 
             val json = JSONObject(response)
 
-            val dataObject =
-                json.getJSONObject("data")
+            val dataObject = json.getJSONObject("data")
 
-            val streamUrls =
-                dataObject.getJSONArray("stream_urls")
+            val streamUrls = dataObject.getJSONArray("stream_urls")
 
             for (i in 0 until streamUrls.length()) {
 
-                val streamUrl =
-                    streamUrls.getString(i)
+                val streamUrl = streamUrls.getString(i)
 
                 callback.invoke(
-    ExtractorLink(
-        source = name,
-        name = "$name Server ${i + 1}",
-        url = streamUrl,
-        referer = "https://brightpathsignals.com/",
-        quality = Qualities.Unknown.value,
-        isM3u8 = true
-    )
-)
-}
+                    ExtractorLink(
+                        source = name,
+                        name = "$name Server ${i + 1}",
+                        url = streamUrl,
+                        referer = "https://brightpathsignals.com/",
+                        quality = Qualities.Unknown.value,
+                        isM3u8 = true
+                    )
+                )
+            }
+
             val subtitles =
                 json.optJSONArray("default_subs")
                     ?: dataObject.optJSONArray("default_subs")
@@ -85,8 +82,7 @@ object StreamImdbExtractor {
 
                 for (i in 0 until subtitles.length()) {
 
-                    val sub =
-                        subtitles.getJSONObject(i)
+                    val sub = subtitles.getJSONObject(i)
 
                     subtitleCallback.invoke(
                         SubtitleFile(
