@@ -306,18 +306,48 @@ class StreamImdbProvider : MainAPI() {
                 ?.text()
                 ?.trim()
 
-        val imdbId =
-            Regex("""tt\d+""")
-                .find(document.html())
-                ?.value
-                ?: "null"
+        val plot =
+    document.selectFirst("#cbPlot")
+        ?.text()
+        ?.trim()
 
-        val tmdbId =
-            Regex("""tmdb["': ]+(\d+)""")
-                .find(document.html())
-                ?.groupValues
-                ?.getOrNull(1)
-                ?: "null"
+val tmdbId =
+    Regex("""__cbCwMeta\s*=\s*\{.*?"id":"(\d+)"""")
+        .find(document.html())
+        ?.groupValues
+        ?.getOrNull(1)
+        ?: "null"
+
+val imdbId =
+    if (tmdbId != "null") {
+
+        try {
+
+            val mediaType =
+                if (
+                    url.contains("/tv/")
+                    || document.select(".cb-season").isNotEmpty()
+                ) {
+                    "tv"
+                } else {
+                    "movie"
+                }
+
+            val external =
+                app.get(
+                    "https://api.themoviedb.org/3/$mediaType/$tmdbId/external_ids?api_key=fceea78d0d9713c879f0cfeb0dbfb40b"
+                ).text
+
+            org.json.JSONObject(external)
+                .optString("imdb_id", "null")
+
+        } catch (e: Exception) {
+            "null"
+        }
+
+    } else {
+        "null"
+    }
 
         val year =
             Regex("""(19|20)\d{2}""")
