@@ -67,21 +67,15 @@ object StreamImdbExtractor {
                     streamUrls.getString(i)
 
                 callback.invoke(
-                    newExtractorLink(
-                        source = name,
-                        name = "$name Server ${i + 1}",
-                        url = streamUrl,
-                        type = ExtractorLinkType.M3U8
-                    ) {
-                        headers = mapOf(
-                            "Referer" to "https://brightpathsignals.com/"
-                        )
-
-                        quality =
-                            Qualities.Unknown.value
-                    }
-                )
-            }
+    ExtractorLink(
+        source = name,
+        name = "$name Server ${i + 1}",
+        url = streamUrl,
+        referer = "https://brightpathsignals.com/",
+        quality = Qualities.Unknown.value,
+        isM3u8 = true
+    )
+)
 
             val subtitles =
                 json.optJSONArray("default_subs")
