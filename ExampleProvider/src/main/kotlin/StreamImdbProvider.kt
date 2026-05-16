@@ -301,10 +301,7 @@ class StreamImdbProvider : MainAPI() {
                 ?.substringAfter("url('")
                 ?.substringBefore("')")
 
-        val plot =
-            document.selectFirst("#cbPlot")
-                ?.text()
-                ?.trim()
+        
 
         val plot =
     document.selectFirst("#cbPlot")
