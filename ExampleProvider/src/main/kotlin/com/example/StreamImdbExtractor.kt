@@ -70,14 +70,18 @@ object StreamImdbExtractor {
                 Log.d("StreamIMDB", "FOUND LINK = $streamUrl")
 
                 callback.invoke(
-                    ExtractorLink(
-                        name,
-                        "$name Server ${i + 1}",
-                        streamUrl,
-                        "https://brightpathsignals.com/",
-                        Qualities.Unknown.value,
-                        true
-                    )
+                    newExtractorLink(
+                        source = name,
+                        name = "$name Server ${i + 1}",
+                        url = streamUrl,
+                        type = ExtractorLinkType.M3U8
+                    ) {
+                        headers = mapOf(
+                            "Referer" to "https://brightpathsignals.com/"
+                        )
+
+                        quality = Qualities.Unknown.value
+                    }
                 )
             }
 
