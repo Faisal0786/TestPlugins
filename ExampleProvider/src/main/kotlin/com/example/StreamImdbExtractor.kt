@@ -52,24 +52,31 @@ object StreamImdbExtractor {
                 )
             ).text
 
+            Log.d("StreamIMDB", "API RESPONSE = $response")
+
             val json = JSONObject(response)
 
-            val dataObject = json.getJSONObject("data")
+            val dataObject =
+                json.getJSONObject("data")
 
-            val streamUrls = dataObject.getJSONArray("stream_urls")
+            val streamUrls =
+                dataObject.getJSONArray("stream_urls")
 
             for (i in 0 until streamUrls.length()) {
 
-                val streamUrl = streamUrls.getString(i)
+                val streamUrl =
+                    streamUrls.getString(i)
+
+                Log.d("StreamIMDB", "FOUND LINK = $streamUrl")
 
                 callback.invoke(
-                    newExtractorLink(
-                        source = name,
-                        name = "$name Server ${i + 1}",
-                        url = streamUrl,
-                        referer = "https://brightpathsignals.com/",
-                        quality = Qualities.Unknown.value,
-                        isM3u8 = true
+                    ExtractorLink(
+                        name,
+                        "$name Server ${i + 1}",
+                        streamUrl,
+                        "https://brightpathsignals.com/",
+                        Qualities.Unknown.value,
+                        true
                     )
                 )
             }
@@ -82,7 +89,8 @@ object StreamImdbExtractor {
 
                 for (i in 0 until subtitles.length()) {
 
-                    val sub = subtitles.getJSONObject(i)
+                    val sub =
+                        subtitles.getJSONObject(i)
 
                     subtitleCallback.invoke(
                         SubtitleFile(
