@@ -4,6 +4,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.AppUtils.toJson
 
 class StreamImdbProvider : MainAPI() {
 
@@ -18,6 +19,14 @@ class StreamImdbProvider : MainAPI() {
         TvType.Movie,
         TvType.TvSeries,
         TvType.Anime
+    )
+
+    data class LoadLinkData(
+        val imdbId: String,
+        val tmdbId: String,
+        val type: String,
+        val season: Int? = null,
+        val episode: Int? = null
     )
 
     private val stealthHeaders = mapOf(
@@ -301,50 +310,48 @@ class StreamImdbProvider : MainAPI() {
                 ?.substringAfter("url('")
                 ?.substringBefore("')")
 
-        
-
         val plot =
-    document.selectFirst("#cbPlot")
-        ?.text()
-        ?.trim()
+            document.selectFirst("#cbPlot")
+                ?.text()
+                ?.trim()
 
-val tmdbId =
-    Regex(""""id":"(\d+)"""")
-        .find(document.html())
-        ?.groupValues
-        ?.getOrNull(1)
-        ?: "null"
+        val tmdbId =
+            Regex("""__cbCwMeta\s*=\s*\{.*?"id":"(\d+)"""")
+                .find(document.html())
+                ?.groupValues
+                ?.getOrNull(1)
+                ?: "null"
 
-val imdbId =
-    if (tmdbId != "null") {
+        val imdbId =
+            if (tmdbId != "null") {
 
-        try {
+                try {
 
-            val mediaType =
-                if (
-                    url.contains("/tv/")
-                    || document.select(".cb-season").isNotEmpty()
-                ) {
-                    "tv"
-                } else {
-                    "movie"
+                    val mediaType =
+                        if (
+                            url.contains("/tv/")
+                            || document.select(".cb-season").isNotEmpty()
+                        ) {
+                            "tv"
+                        } else {
+                            "movie"
+                        }
+
+                    val external =
+                        app.get(
+                            "https://api.themoviedb.org/3/$mediaType/$tmdbId/external_ids?api_key=fceea78d0d9713c879f0cfeb0dbfb40b"
+                        ).text
+
+                    org.json.JSONObject(external)
+                        .optString("imdb_id", "null")
+
+                } catch (e: Exception) {
+                    "null"
                 }
 
-            val external =
-                app.get(
-                    "https://api.themoviedb.org/3/$mediaType/$tmdbId/external_ids?api_key=fceea78d0d9713c879f0cfeb0dbfb40b"
-                ).text
-
-            org.json.JSONObject(external)
-                .optString("imdb_id", "null")
-
-        } catch (e: Exception) {
-            "null"
-        }
-
-    } else {
-        "null"
-    }
+            } else {
+                "null"
+            }
 
         val year =
             Regex("""(19|20)\d{2}""")
@@ -425,25 +432,21 @@ val imdbId =
                     seasonWrap.select(".cb-episode-item")
                         .forEach { ep ->
 
-                            val epHref =
-                                fixUrlNull(
-                                    ep.attr("href")
-                                ) ?: return@forEach
-
                             val epTitle =
                                 ep.selectFirst(".cb-episode-title")
                                     ?.text()
                                     ?.trim()
 
                             val epNum =
-    Regex("""\d+""")
-        .find(
-            ep.selectFirst(".cb-episode-num")
-                ?.text()
-                ?: ""
-        )
-        ?.value
-        ?.toIntOrNull()
+                                Regex("""\d+""")
+                                    .find(
+                                        ep.selectFirst(".cb-episode-num")
+                                            ?.text()
+                                            ?: ""
+                                    )
+                                    ?.value
+                                    ?.toIntOrNull()
+                                    ?: 1
 
                             val epThumb =
                                 fixUrlNull(
@@ -456,7 +459,13 @@ val imdbId =
 
                             episodes.add(
                                 newEpisode(
-                                    "$imdbId|$tmdbId|tv|$seasonNum|$epNum"
+                                    LoadLinkData(
+                                        imdbId,
+                                        tmdbId,
+                                        "tv",
+                                        seasonNum,
+                                        epNum
+                                    ).toJson()
                                 ) {
 
                                     this.name =
@@ -513,7 +522,11 @@ val imdbId =
                 title,
                 url,
                 TvType.Movie,
-                "$imdbId|$tmdbId|movie"
+                LoadLinkData(
+                    imdbId,
+                    tmdbId,
+                    "movie"
+                ).toJson()
             ) {
 
                 this.posterUrl =
