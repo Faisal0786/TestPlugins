@@ -4,6 +4,7 @@ import android.util.Log
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import org.json.JSONObject
 
 object StreamImdbExtractor {
@@ -17,17 +18,18 @@ object StreamImdbExtractor {
 
         try {
 
-            val parts = data.split('|')
+            val parsed =
+                parseJson<StreamImdbProvider.LoadLinkData>(data)
 
-            val imdbId = parts[0]
-            val tmdbId = parts[1]
-            val type = parts[2]
+            val imdbId = parsed.imdbId
+            val tmdbId = parsed.tmdbId
+            val type = parsed.type
 
             val apiUrl =
                 if (type == "tv") {
 
-                    val season = parts[3]
-                    val episode = parts[4]
+                    val season = parsed.season
+                    val episode = parsed.episode
 
                     if (imdbId != "null") {
                         "https://streamdata.vaplayer.ru/api.php?imdb=$imdbId&type=tv&season=$season&episode=$episode"
@@ -66,8 +68,6 @@ object StreamImdbExtractor {
 
                 val streamUrl =
                     streamUrls.getString(i)
-
-                Log.d("StreamIMDB", "FOUND LINK = $streamUrl")
 
                 callback.invoke(
                     newExtractorLink(
