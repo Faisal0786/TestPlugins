@@ -76,7 +76,7 @@ object StreamImdbExtractor {
         isM3u8 = true
     )
 )
-
+}
             val subtitles =
                 json.optJSONArray("default_subs")
                     ?: dataObject.optJSONArray("default_subs")
