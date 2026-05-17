@@ -1,8 +1,7 @@
 package com.example
 
 import com.lagradost.cloudstream3.*
-import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
-import 
+import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer 
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
