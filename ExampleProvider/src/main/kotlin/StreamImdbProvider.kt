@@ -176,7 +176,7 @@ class StreamImdbProvider : MainAPI() {
                 this.tags = tags
                 this.actors = actors
                 addTrailer(trailer?.let { "https://www.youtube.com/watch?v=$it" })
-                addImdbId(imdbId)
+                
                 
             }
         } else {
@@ -188,7 +188,7 @@ class StreamImdbProvider : MainAPI() {
                 this.tags = tags
                 this.actors = actors
                 addTrailer(trailer?.let { "https://www.youtube.com/watch?v=$it" })
-                addImdbId(imdbId)
+                
                 
             }
         }
