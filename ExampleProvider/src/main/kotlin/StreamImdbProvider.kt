@@ -2,8 +2,7 @@ package com.example
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
-import com.lagradost.cloudstream3.LoadResponse.Companion.addImdbId
-import com.lagradost.cloudstream3.LoadResponse.Companion.addTmdbId
+import 
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.toJson
@@ -178,7 +177,7 @@ class StreamImdbProvider : MainAPI() {
                 this.actors = actors
                 addTrailer(trailer?.let { "https://www.youtube.com/watch?v=$it" })
                 addImdbId(imdbId)
-                addTmdbId(tmdbId)
+                
             }
         } else {
             return newMovieLoadResponse(title, url, TvType.Movie, LoadLinkData(imdbId, tmdbId, "movie").toJson()) {
@@ -190,7 +189,7 @@ class StreamImdbProvider : MainAPI() {
                 this.actors = actors
                 addTrailer(trailer?.let { "https://www.youtube.com/watch?v=$it" })
                 addImdbId(imdbId)
-                addTmdbId(tmdbId)
+                
             }
         }
     }
