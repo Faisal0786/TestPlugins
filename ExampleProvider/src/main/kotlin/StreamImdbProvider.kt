@@ -288,12 +288,13 @@ class StreamImdbProvider : MainAPI() {
                 ?.trim()
 
         val tmdbId =
-            Regex(
-                """window\.__cbTvMeta\s*=\s*\{.*?"id"\s*:\s*"*(\d+)"*"""
-            )
-                .find(document.html())
-                ?.groupValues
-                ?.getOrNull(1)
+    Regex(
+        """window\.__cb(?:Tv|Movie)Meta\s*=\s*\{.*?"id"\s*:\s*"*(\d+)"*""",
+        RegexOption.DOT_MATCHES_ALL
+    )
+        .find(document.html())
+        ?.groupValues
+        ?.getOrNull(1)
 
         val imdbId =
             if (!tmdbId.isNullOrBlank()) {
