@@ -287,14 +287,27 @@ class StreamImdbProvider : MainAPI() {
                 ?.text()
                 ?.trim()
 
-        val tmdbId =
+        val html = document.html()
+
+val metaMatch =
     Regex(
-        """window\.__cb(?:Tv|Movie)Meta\s*=\s*\{.*?"id"\s*:\s*"*(\d+)"*""",
-        RegexOption.DOT_MATCHES_ALL
-    )
-        .find(document.html())
-        ?.groupValues
-        ?.getOrNull(1)
+        """window\.__cb(?:Tv|Cw)Meta\s*=\s*(\{.*?});""",
+        setOf(
+            RegexOption.DOT_MATCHES_ALL,
+            RegexOption.IGNORE_CASE
+        )
+    ).find(html)
+
+val tmdbId =
+    try {
+        metaMatch
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.let { org.json.JSONObject(it) }
+            ?.optString("id")
+    } catch (_: Exception) {
+        null
+    }
 
         val imdbId =
             if (!tmdbId.isNullOrBlank()) {
