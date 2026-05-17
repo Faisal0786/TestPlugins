@@ -5,6 +5,7 @@ import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
+import org.json.JSONObject
 
 object StreamImdbExtractor {
 
@@ -13,7 +14,8 @@ object StreamImdbExtractor {
         val tmdbId: String? = null,
         val type: String,
         val season: Int? = null,
-        val episode: Int? = null
+        val episode: Int? = null,
+        val url: String? = null
     )
 
     suspend fun loadLinks(
@@ -30,14 +32,60 @@ object StreamImdbExtractor {
             val parsed =
                 parseJson<LoadLinkData>(data)
 
-            val imdbId =
+            var imdbId =
                 parsed.imdbId
 
-            val tmdbId =
+            var tmdbId =
                 parsed.tmdbId
 
             val type =
                 parsed.type
+
+            val pageUrl =
+                parsed.url
+
+            if (
+                type == "tv" &&
+                tmdbId.isNullOrBlank() &&
+                !pageUrl.isNullOrBlank()
+            ) {
+
+                try {
+
+                    val html =
+                        app.get(pageUrl).text
+
+                    val regex =
+                        Regex(
+                            """window\.__cbTvMeta\s*=\s*(\{.*?\});""",
+                            RegexOption.DOT_MATCHES_ALL
+                        )
+
+                    val match =
+                        regex.find(html)
+
+                    if (match != null) {
+
+                        val json =
+                            JSONObject(match.groupValues[1])
+
+                        tmdbId =
+                            json.optString("id")
+
+                        Log.d(
+                            "StreamIMDB",
+                            "EXTRACTED TMDB = $tmdbId"
+                        )
+                    }
+
+                } catch (e: Exception) {
+
+                    Log.e(
+                        "StreamIMDB",
+                        "TMDB EXTRACT ERROR = ${e.message}"
+                    )
+                }
+            }
 
             val apiUrl =
                 if (type == "tv") {
@@ -83,34 +131,50 @@ object StreamImdbExtractor {
             Log.d("StreamIMDB", "API RESPONSE = $response")
 
             val json =
-                org.json.JSONObject(response)
+                JSONObject(response)
+
+            if (!json.has("data")) {
+
+                Log.e(
+                    "StreamIMDB",
+                    "NO DATA FOUND"
+                )
+
+                return false
+            }
 
             val dataObject =
                 json.getJSONObject("data")
 
             val streamUrls =
-                dataObject.getJSONArray("stream_urls")
+                dataObject.optJSONArray("stream_urls")
 
-            for (i in 0 until streamUrls.length()) {
+            if (streamUrls != null) {
 
-                val streamUrl =
-                    streamUrls.getString(i)
+                for (i in 0 until streamUrls.length()) {
 
-                callback.invoke(
-                    newExtractorLink(
-                        source = name,
-                        name = "$name Server ${i + 1}",
-                        url = streamUrl,
-                        type = ExtractorLinkType.M3U8
-                    ) {
-                        headers = mapOf(
-                            "Referer" to "https://brightpathsignals.com/"
+                    val streamUrl =
+                        streamUrls.optString(i)
+
+                    if (streamUrl.isNotBlank()) {
+
+                        callback.invoke(
+                            newExtractorLink(
+                                source = name,
+                                name = "$name Server ${i + 1}",
+                                url = streamUrl,
+                                type = ExtractorLinkType.M3U8
+                            ) {
+                                headers = mapOf(
+                                    "Referer" to "https://brightpathsignals.com/"
+                                )
+
+                                quality =
+                                    Qualities.Unknown.value
+                            }
                         )
-
-                        quality =
-                            Qualities.Unknown.value
                     }
-                )
+                }
             }
 
             val subtitles =
@@ -122,14 +186,34 @@ object StreamImdbExtractor {
                 for (i in 0 until subtitles.length()) {
 
                     val sub =
-                        subtitles.getJSONObject(i)
+                        subtitles.optJSONObject(i)
+                            ?: continue
 
-                    subtitleCallback.invoke(
-                        SubtitleFile(
-                            sub.optString("lang"),
-                            sub.optString("url")
+                    val lang =
+                        sub.optString("lang")
+                            .ifBlank {
+                                sub.optString("code")
+                            }
+
+                    val url =
+                        sub.optString("url")
+
+                    if (url.isNotBlank()) {
+
+                        Log.d(
+                            "StreamIMDB",
+                            "SUBTITLE = $lang -> $url"
                         )
-                    )
+
+                        subtitleCallback.invoke(
+                            SubtitleFile(
+                                lang.ifBlank {
+                                    "Unknown"
+                                },
+                                url
+                            )
+                        )
+                    }
                 }
             }
 
