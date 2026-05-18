@@ -1,5 +1,4 @@
 package com.example
-import org.json.JSONObject
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
@@ -288,33 +287,13 @@ class StreamImdbProvider : MainAPI() {
                 ?.text()
                 ?.trim()
 
-        val html = document.html()
-
-val tvMatch =
-    Regex(
-        """window\.__cbTvMeta\s*=\s*(\{.*?});""",
-        RegexOption.DOT_MATCHES_ALL
-    ).find(html)
-
-val movieMatch =
-    Regex(
-        """window\.__cbCwMeta\s*=\s*(\{.*?});""",
-        RegexOption.DOT_MATCHES_ALL
-    ).find(html)
-
-val tmdbJson =
-    tvMatch?.groupValues?.getOrNull(1)
-        ?: movieMatch?.groupValues?.getOrNull(1)
-
-val tmdbId =
-    try {
-        tmdbJson
-            ?.let { org.json.JSONObject(it) }
-            ?.optString("id")
-    } catch (_: Exception) {
-        null
-    }
-
+        val tmdbId =
+            Regex(
+                """window\.__cbTvMeta\s*=\s*\{.*?"id"\s*:\s*"*(\d+)"*"""
+            )
+                .find(document.html())
+                ?.groupValues
+                ?.getOrNull(1)
 
         val imdbId =
             if (!tmdbId.isNullOrBlank()) {
