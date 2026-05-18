@@ -1,16 +1,46 @@
-version = "1.0.0"
-description = "SDmovies Plugin"
+import org.jetbrains.kotlin.konan.properties.Properties
+
+version = 1
 
 android {
-    compileSdk = 33
-    
+
     defaultConfig {
-        minSdk = 21
-        targetSdk = 33
+
+        val properties = Properties()
+
+        properties.load(
+            project.rootProject
+                .file("local.properties")
+                .inputStream()
+        )
+
+        android.buildFeatures.buildConfig = true
+
+        buildConfigField(
+            "String",
+            "TMDB_KEY",
+            "\"${properties.getProperty("TMDB_KEY")}\""
+        )
     }
 }
 
-dependencies {
-    compileOnly("com.lagradost:cloudstream3:latest")
-    compileOnly("org.jsoup:jsoup:1.14.3")
+cloudstream {
+
+    description = "Multi language Movies and Tv shows provider"
+
+    authors = listOf(
+        "Faisal"
+    )
+
+    status = 1
+
+    tvTypes = listOf(
+        "TvSeries",
+        "Movie",
+        "AsianDrama",
+        "Anime",
+        "Torrent"
+    )
+
+    iconUrl = "https://sdmoviespoint.cyou/favicon.ico"
 }
