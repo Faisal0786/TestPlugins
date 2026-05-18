@@ -292,17 +292,14 @@ class StreamImdbProvider : MainAPI() {
 val metaMatch =
     Regex(
         """window\.__cb(Tv|Cw)Meta\s*=\s*(\{.*?});""",
-        setOf(
-            RegexOption.DOT_MATCHES_ALL,
-            RegexOption.IGNORE_CASE
-        )
+        RegexOption.DOT_MATCHES_ALL
     ).find(html)
 
 val tmdbId =
     try {
         metaMatch
             ?.groupValues
-            ?.getOrNull(1)
+            ?.getOrNull(2)
             ?.let { org.json.JSONObject(it) }
             ?.optString("id")
     } catch (_: Exception) {
