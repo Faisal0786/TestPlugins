@@ -291,7 +291,7 @@ class StreamImdbProvider : MainAPI() {
 
 val metaMatch =
     Regex(
-        """window\.__cb(?:Tv|Cw)Meta\s*=\s*(\{.*?});""",
+        """window\.__cb(Tv|Cw)Meta\s*=\s*(\{.*?});""",
         setOf(
             RegexOption.DOT_MATCHES_ALL,
             RegexOption.IGNORE_CASE
